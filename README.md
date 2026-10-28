@@ -7,7 +7,9 @@ are deferred.
 Read the [EasyMapping API and semantics](docs/easy-mapping.md) to use the first
 implementation. The [comparison results](docs/dto-comparison-results.md) and
 [initial investigation](docs/mapping-investigation.md) retain the earlier evidence.
-The packages are local 0.1.0 builds and have not been published.
+Version **1.1.0** is being prepared for release. The packages built from this
+branch have not been published. See the [release guide](docs/release.md),
+[release notes](CHANGELOG.md), and [MIT license](LICENSE).
 
 ```csharp
 using XBullet.EasyMapping;
@@ -106,9 +108,15 @@ Library versions target .NET Standard 2.0; samples and tests target .NET 10. Dir
 dependencies are centralized and solution project resolutions are recorded in lock
 files. Sample projects are non-packable.
 
-Run `./tools/Test-Package.ps1` to build both NuGet packages into `artifacts/packages`
-and execute an isolated consumer using the local feed. The smoke cache is fresh for
-each run and intentionally has no committed lock file for the unpublished packages.
-CI verifies builds, behavior, formatting, diagnostics, model approvals, generated evidence, and package
-consumption. Consumer profiles, other target frameworks, and performance remain
-outside the executed checks.
+Run `./tools/Test-Package.ps1` to build both NuGet packages into
+`artifacts/packages/1.1.0`, verify their metadata/license/assets, and execute an
+isolated consumer using that local feed. The version comes from
+`Directory.Build.props`; the smoke consumer uses the same version through central
+package management. Each run uses a fresh cache.
+
+CI is configured to verify builds, all 216 tests, formatting, documentation links,
+diagnostics, model approvals, generated evidence, and packaged consumption on
+Windows and Ubuntu. Test results are retained even on failure; a successful
+Windows job also retains the verified packages. Both jobs must pass before
+publishing. Consumer-specific profiles, other target frameworks, and performance
+remain outside the executed checks.

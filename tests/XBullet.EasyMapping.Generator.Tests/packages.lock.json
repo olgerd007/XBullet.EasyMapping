@@ -118,7 +118,7 @@
       "XBullet.EasyMapping": {
         "type": "Project",
         "dependencies": {
-          "XBullet.EasyMapping.Abstractions": "[0.1.0, )"
+          "XBullet.EasyMapping.Abstractions": "[1.1.0, )"
         }
       },
       "xbullet.easymapping.abstractions": {

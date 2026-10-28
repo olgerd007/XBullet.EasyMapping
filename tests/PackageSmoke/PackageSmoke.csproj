@@ -1,7 +1,7 @@
 <Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup>
     <OutputType>Exe</OutputType>
-    <!-- The smoke test restores freshly packed, unpublished 0.1.0 packages in an isolated cache. -->
+    <!-- The smoke test restores freshly packed packages in an isolated cache. -->
     <RestorePackagesWithLockFile>false</RestorePackagesWithLockFile>
   </PropertyGroup>
   <ItemGroup>

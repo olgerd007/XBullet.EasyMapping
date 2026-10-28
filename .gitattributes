@@ -1,0 +1,2 @@
+# Keep source, scripts, and reviewed snapshots consistent across CI platforms.
+* text=auto eol=lf

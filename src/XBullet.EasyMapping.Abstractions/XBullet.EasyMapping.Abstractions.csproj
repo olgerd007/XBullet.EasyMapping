@@ -3,7 +3,6 @@
     <TargetFramework>netstandard2.0</TargetFramework>
     <LangVersion>12</LangVersion>
     <IsPackable>true</IsPackable>
-    <Version>0.1.0</Version>
     <PackageReadmeFile>README.md</PackageReadmeFile>
     <Description>Compile-time mapping declarations for XBullet.EasyMapping.</Description>
   </PropertyGroup>

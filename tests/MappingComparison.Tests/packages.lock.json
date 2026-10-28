@@ -159,36 +159,36 @@
         "type": "Project",
         "dependencies": {
           "AutoMapper": "[16.2.0, )",
-          "MappingComparison.Contracts": "[1.0.0, )"
+          "MappingComparison.Contracts": "[1.1.0, )"
         }
       },
       "mappingcomparison.contracts": {
         "type": "Project"
       },
-      "mappingcomparison.mapping": {
+      "mappingcomparison.easymapping": {
         "type": "Project",
         "dependencies": {
-          "MappingComparison.Contracts": "[1.0.0, )",
-          "XBullet.EasyMapping.Abstractions": "[0.1.0, )"
+          "MappingComparison.Contracts": "[1.1.0, )",
+          "XBullet.EasyMapping.Abstractions": "[1.1.0, )"
         }
       },
       "mappingcomparison.facet": {
         "type": "Project",
         "dependencies": {
           "Facet": "[6.6.15, )",
-          "MappingComparison.Contracts": "[1.0.0, )"
+          "MappingComparison.Contracts": "[1.1.0, )"
         }
       },
       "mappingcomparison.manual": {
         "type": "Project",
         "dependencies": {
-          "MappingComparison.Contracts": "[1.0.0, )"
+          "MappingComparison.Contracts": "[1.1.0, )"
         }
       },
       "mappingcomparison.mapperly": {
         "type": "Project",
         "dependencies": {
-          "MappingComparison.Contracts": "[1.0.0, )"
+          "MappingComparison.Contracts": "[1.1.0, )"
         }
       },
       "xbullet.easymapping.abstractions": {

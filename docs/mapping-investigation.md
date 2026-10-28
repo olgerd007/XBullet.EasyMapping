@@ -9,7 +9,7 @@ executed results, pinned packages, and generated evidence. EF projections were
 deferred at the user's request. Sections below retain the original investigation
 scope; documented support alone is not a test result.
 
-The user subsequently chose to own the mapping engine. The [Mapping implementation](mapping.md)
+The user subsequently chose to own the mapping engine. The [Mapping implementation](easy-mapping.md)
 now follows that direction; the adoption recommendation below is historical research.
 
 ## Recommendation

@@ -1,10 +1,10 @@
-# EasyMapping 0.1: generated DTO mappings
+# EasyMapping 1.1.0: generated DTO mappings
 
 EasyMapping generates C# implementations of typed partial methods during compilation.
 It owns its generator and does not delegate to AutoMapper, Mapperly, or Facet. The
 initial implementation focuses on DTO transformations; EF projections are deferred.
 
-Version 0.1.0 is a local, unpublished first implementation. It is not an API-compatible
+Version 1.1.0 is being prepared for release and is currently built locally. It is not an API-compatible
 replacement for every AutoMapper feature. The sample targets .NET 10; compiler tests
 use Roslyn 4.8 and C# 12. The generator and attribute libraries target .NET Standard
 2.0 so the compiler tooling is independent of the application's target framework.
@@ -337,7 +337,8 @@ repository README. Inspect emitted source in
 under `docs/evidence/generated/EasyMapping/`.
 
 `tools/Test-Package.ps1` packs `XBullet.EasyMapping` and
-`XBullet.EasyMapping.Abstractions` into `artifacts/packages`, restores an isolated
+`XBullet.EasyMapping.Abstractions` into `artifacts/packages/1.1.0`, verifies package
+metadata, MIT license, README, dependency versions, and compiler integration assets, then restores an isolated
 consumer from that local feed, and executes it. The smoke consumer is deliberately
 outside the solution so an ordinary solution restore does not need unpublished
 packages to exist first. Each smoke run uses a fresh cache to prevent stale package
@@ -346,9 +347,12 @@ contents from making the test pass.
 Install the locally built generator package in a consumer with:
 
 ```xml
-<PackageReference Include="XBullet.EasyMapping" Version="0.1.0" />
+<PackageReference Include="XBullet.EasyMapping" Version="1.1.0" />
 ```
 
 The package carries the generator under `analyzers/dotnet/cs` and a dependency on
 the configuration attributes. Roslyn is a private compiler dependency and is not
 shipped as a consumer runtime library. No package is published by the smoke script.
+
+Until the release is published, use `artifacts/packages/1.1.0` as the local NuGet
+source. The package includes its MIT license and a source repository/commit link.

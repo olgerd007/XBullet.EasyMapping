@@ -3,7 +3,6 @@
     <TargetFramework>netstandard2.0</TargetFramework>
     <LangVersion>12</LangVersion>
     <IsPackable>true</IsPackable>
-    <Version>0.1.0</Version>
     <PackageId>XBullet.EasyMapping</PackageId>
     <Description>Source-generated DTO mappings without runtime reflection.</Description>
     <IncludeBuildOutput>false</IncludeBuildOutput>

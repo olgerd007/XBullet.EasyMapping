@@ -1,9 +1,14 @@
 # DTO comparison milestone
 
+This is the historical comparison milestone. Current generator behavior, test counts,
+packages, and release gates are documented in the [API guide](easy-mapping.md) and
+[release guide](release.md). The implementation and release preparation have progressed
+beyond the decisions recorded below.
+
 Executed on 2026-10-28 with .NET SDK 10.0.403 and .NET runtime 10.0.14 on Windows.
 
 This document records the original comparison milestone. A subsequent request
-explicitly chose an independently owned generator. See the [Mapping guide](mapping.md)
+explicitly chose an independently owned generator. See the [Mapping guide](easy-mapping.md)
 for that implementation; the expanded suite now has 79 comparison cases and 81
 compiler tests. Its collection behavior matches the handwritten baseline here:
 preserve null, copy containers, and replace destination containers during updates.
