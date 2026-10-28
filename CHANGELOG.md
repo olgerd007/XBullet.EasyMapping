@@ -1,5 +1,19 @@
 # Changelog
 
+## Unreleased
+
+### 1.1.1
+
+- Remove identity LINQ projections when copying collection elements.
+- Generate capacity-sized loops for converted lists from arrays and standard
+  counted collection contracts, preserving nulls, converters and container isolation.
+- Add collection regression tests and a frozen pre-optimization benchmark reference.
+- Validate Release builds, public API approvals, and attributes package compatibility
+  against published 1.1.0, with coverage gates for both production assemblies.
+- Add NuGet auditing, dependency review, CodeQL, and weekly Dependabot updates.
+- Retain manual shared package versioning and verify stable/pre-release tag consistency.
+- Allow a longer NuGet indexing window and test recovery without republishing packages.
+
 ## 1.1.0 — 2026-10-28
 
 - Add an owned incremental C# generator for typed DTO creation and existing-target updates.

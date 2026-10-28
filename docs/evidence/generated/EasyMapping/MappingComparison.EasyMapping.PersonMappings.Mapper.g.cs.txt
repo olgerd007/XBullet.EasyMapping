@@ -17,17 +17,25 @@ namespace MappingComparison.EasyMapping {
                 @Id: @source.@Id,
                 @DisplayName: @source.@Name,
                 @Address: (@source.@Address is { } __mapperValue0 ? @MapAddress(__mapperValue0) : default(global::MappingComparison.Contracts.AddressDto?)),
-                @Tags: (@source.@Tags is { } __mapperValue1 ? global::System.Linq.Enumerable.ToList(global::System.Linq.Enumerable.Select(__mapperValue1, __mapperValue2 => __mapperValue2)) : default(global::System.Collections.Generic.List<string>?)),
-                @PreviousAddresses: (@source.@PreviousAddresses is { } __mapperValue3 ? global::System.Linq.Enumerable.ToList(global::System.Linq.Enumerable.Select(__mapperValue3, __mapperValue4 => @MapAddress(__mapperValue4))) : default(global::System.Collections.Generic.List<global::MappingComparison.Contracts.AddressDto>?))
+                @Tags: (@source.@Tags is { } __mapperValue1 ? global::System.Linq.Enumerable.ToList(__mapperValue1) : default(global::System.Collections.Generic.List<string>?)),
+                @PreviousAddresses: (@source.@PreviousAddresses is { } __mapperValue3 ? __mapperValue5(__mapperValue3) : default(global::System.Collections.Generic.List<global::MappingComparison.Contracts.AddressDto>?))
             ) {
             };
+            static global::System.Collections.Generic.List<global::MappingComparison.Contracts.AddressDto> __mapperValue5(global::System.Collections.Generic.List<global::MappingComparison.Contracts.AddressInput> __mapperValue6) {
+                var __mapperValue7 = new global::System.Collections.Generic.List<global::MappingComparison.Contracts.AddressDto>(__mapperValue6.Count);
+                foreach (var __mapperValue4 in __mapperValue6) {
+                    __mapperValue7.Add(@MapAddress(__mapperValue4));
+                }
+                return __mapperValue7;
+            }
+
         }
 
         public static partial void @Update(global::MappingComparison.Contracts.ProfileUpdate @source, global::MappingComparison.Contracts.EditableProfile @target) {
             if (@source is null) throw new global::System.ArgumentNullException("source");
             if (@target is null) throw new global::System.ArgumentNullException("target");
             @target.@Name = (@source.@Name is { } __mapperValue0 ? __mapperValue0 : default(string?));
-            @target.@Tags = (@source.@Tags is { } __mapperValue1 ? global::System.Linq.Enumerable.ToList(global::System.Linq.Enumerable.Select(__mapperValue1, __mapperValue2 => __mapperValue2)) : default(global::System.Collections.Generic.List<string>?));
+            @target.@Tags = (@source.@Tags is { } __mapperValue1 ? global::System.Linq.Enumerable.ToList(__mapperValue1) : default(global::System.Collections.Generic.List<string>?));
         }
 
     }

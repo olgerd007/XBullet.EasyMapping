@@ -1,5 +1,7 @@
 [CmdletBinding()]
 param(
+    [ValidateSet('Debug', 'Release')]
+    [string] $Configuration = 'Release',
     [string] $PackageSource,
     [string] $PackageCache,
     [ValidateSet('Source', 'Project', 'Custom', 'Existing', 'Linked', 'External')]
@@ -51,8 +53,8 @@ foreach ($location in $Locations) {
         '<PackageReference Include="XBullet.EasyMapping" />'
     } else {
         @"
-    <Reference Include="XBullet.EasyMapping.Abstractions" HintPath="$abstractionsRoot/bin/Debug/netstandard2.0/XBullet.EasyMapping.Abstractions.dll" />
-    <Analyzer Include="$generatorRoot/bin/Debug/netstandard2.0/XBullet.EasyMapping.Generator.dll" />
+    <Reference Include="XBullet.EasyMapping.Abstractions" HintPath="$abstractionsRoot/bin/$Configuration/netstandard2.0/XBullet.EasyMapping.Abstractions.dll" />
+    <Analyzer Include="$generatorRoot/bin/$Configuration/netstandard2.0/XBullet.EasyMapping.Generator.dll" />
 "@
     }
     $import = if ($PackageSource) { '' } else {
@@ -87,7 +89,7 @@ public record Output(int Id);
     if ($LASTEXITCODE -ne 0) { throw 'Restoring the model-approval test consumer failed.' }
 
     function Assert-Build([string] $ExpectedError, [string] $ExpectedMessage) {
-        $output = @(& dotnet build $project --no-restore --verbosity minimal -m:1 2>&1)
+        $output = @(& dotnet build $project --no-restore --configuration $Configuration --verbosity minimal -m:1 2>&1)
         $status = $LASTEXITCODE
         if ($ExpectedError) {
             if ($status -eq 0 -or -not ($output -match "error ${ExpectedError}:")) {
@@ -129,7 +131,7 @@ public record Output(int Id);
     # The optional helper must use the same location rules as the build integration.
     Remove-Item -LiteralPath $received
     $reviewRequired = $false
-    try { & "$PSScriptRoot/Export-ModelApprovals.ps1" -Project $project | Out-Null }
+    try { & "$PSScriptRoot/Export-ModelApprovals.ps1" -Project $project -Configuration $Configuration | Out-Null }
     catch {
         if ($_.Exception.Message -notlike 'Review the received files,*') { throw }
         $reviewRequired = $true
@@ -161,7 +163,7 @@ public record Output(int Id);
         $received = Join-Path $approvalDirectory 'M.mapper.received.txt'
     }
     Assert-Build
-    & "$PSScriptRoot/Export-ModelApprovals.ps1" -Project $project | Out-Null
+    & "$PSScriptRoot/Export-ModelApprovals.ps1" -Project $project -Configuration $Configuration | Out-Null
     Assert-ApprovalItems @($approved)
 
     if ($location -eq 'Source') {

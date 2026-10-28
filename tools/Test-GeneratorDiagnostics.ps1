@@ -1,6 +1,8 @@
 [CmdletBinding()]
 param(
-    [switch] $UpdateEvidence
+    [switch] $UpdateEvidence,
+    [ValidateSet('Debug', 'Release')]
+    [string] $Configuration = 'Release'
 )
 
 $ErrorActionPreference = 'Stop'
@@ -16,7 +18,7 @@ Push-Location $repositoryRoot
 try {
     foreach ($fixture in $fixtures) {
         $project = "tests/Diagnostics/$($fixture.Name)/$($fixture.Name).csproj"
-        $output = @(& dotnet build $project --no-restore --verbosity minimal -m:1 2>&1)
+        $output = @(& dotnet build $project --no-restore --configuration $Configuration --verbosity minimal -m:1 2>&1)
         $buildExitCode = $LASTEXITCODE
         $expectedPattern = "\berror $($fixture.Diagnostic):"
         $diagnostics = @($output | ForEach-Object { "$_" } | Where-Object { $_ -match $expectedPattern })

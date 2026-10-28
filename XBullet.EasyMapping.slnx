@@ -1,4 +1,7 @@
 <Solution>
+  <Folder Name="/benchmarks/">
+    <Project Path="benchmarks/MappingComparison.Benchmarks/MappingComparison.Benchmarks.csproj" />
+  </Folder>
   <Folder Name="/src/">
     <Project Path="src/XBullet.EasyMapping.Abstractions/XBullet.EasyMapping.Abstractions.csproj" />
     <Project Path="src/XBullet.EasyMapping.Generator/XBullet.EasyMapping.Generator.csproj" />

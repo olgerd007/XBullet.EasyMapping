@@ -233,6 +233,7 @@ internal sealed class MappingPlanner
         }
 
         sourceCoverage.Validate();
+        foreach (var helper in conversion.CollectionHelpers) { body.AppendLine(helper); }
         body.AppendLine("}");
         return body.ToString();
     }
