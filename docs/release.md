@@ -45,6 +45,7 @@ dotnet format XBullet.EasyMapping.slnx --no-restore --verify-no-changes
 ./tools/Export-ModelApprovals.ps1 -Project samples/MappingComparison.EasyMapping/MappingComparison.EasyMapping.csproj
 ./tools/Test-ModelApprovals.ps1
 ./tools/Test-Package.ps1
+./tools/Test-Publishing.ps1
 ```
 
 Each command must succeed. The two intentionally invalid fixture builds are checked
@@ -74,13 +75,63 @@ Before publishing:
    with permission to publish them. Never store API keys in source control.
 5. Change the changelog's `Unreleased` label to the actual release date, commit it,
    and rerun CI before creating the `v1.1.0` tag on the final release commit.
-6. Publish the attributes package first, followed by the generator package. Attach
-   both verified packages and the changelog to the GitHub Release.
+6. Publish the GitHub Release for the tag, then review and approve the `nuget`
+   deployment. The publishing workflow uploads the attributes package first,
+   then the generator, and attaches the same verified packages to the release.
 7. Restore a separate consumer from the published feed and verify the approved-file
    workflow once more. Update documentation to reflect actual publication.
 
 Branch pushes, tags, GitHub Releases, and package publication are separate release
 actions. The validation workflow has no publishing credentials or publish step.
+
+## Trusted NuGet publication
+
+The [publishing workflow](../.github/workflows/publish.yml) runs only when a GitHub
+Release is published. A branch push or pull request does not publish packages.
+Before creating a release, merge this workflow and its helpers into `main` and
+wait for both validation jobs on the final commit to pass.
+
+The NuGet trusted publisher is configured for:
+
+| Setting | Value |
+| --- | --- |
+| Package owner / NuGet profile | `olgerd007` |
+| GitHub repository | `olgerd007/XBullet.EasyMapping` |
+| Workflow filename | `publish.yml` |
+| Environment | `nuget` |
+| Package pattern | `XBullet.EasyMapping*` |
+| Scope | Push new packages and package versions |
+
+The GitHub `nuget` environment holds the non-secret `NUGET_USER=olgerd007`
+variable, allows release tags matching `v*`, and requires approval by `olgerd007`.
+Self-approval is allowed so a sole maintainer can approve their own release.
+Review the source commit and selected artifact before approving the deployment.
+Environment approval is separate from the NuGet trusted publisher policy.
+
+Verification resolves the tag, confirms its commit is on protected `main`, checks
+that `v<version>` matches the tagged `Directory.Build.props`, and selects the
+retained `release-packages` artifact from a successful main push validation for
+that exact commit. Both named Windows/Ubuntu jobs must have actually succeeded.
+The workflow checks the downloaded package versions, licenses, assets, and source
+commit before requesting OIDC credentials. It publishes those CI packages without
+rebuilding them. The temporary NuGet key is scoped to the publishing step's
+environment and is not passed on the command line.
+
+If CI artifacts expire, rerun the original main push validation before publishing.
+Rerunning a partially completed publish accepts an existing NuGet version only
+when its recorded source commit matches this release. Other versions are not
+overwritten. Matching existing GitHub release assets are retained; mismatched
+assets stop the workflow. NuGet indexing is checked after each package push.
+
+For a local dry run, download the validated CI packages and run:
+
+```powershell
+./tools/Publish-Packages.ps1 -PackageDirectory <downloaded-package-directory> -Version 1.1.0 -Commit <full-tagged-commit-sha> -WhatIf
+```
+
+The dry run validates the packages and reports the two planned pushes. It requests
+no publishing credentials and does not contact NuGet or upload anything. Publishing
+uses .NET SDK 10.0.300 or newer for `NUGET_API_KEY` environment support.
 
 ## Main branch policy
 

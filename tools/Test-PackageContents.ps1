@@ -3,7 +3,9 @@ param(
     [Parameter(Mandatory = $true)]
     [string] $PackageDirectory,
     [Parameter(Mandatory = $true)]
-    [string] $ExpectedVersion
+    [string] $ExpectedVersion,
+    [ValidatePattern('^[0-9a-f]{40}$')]
+    [string] $ExpectedCommit
 )
 
 $ErrorActionPreference = 'Stop'
@@ -39,6 +41,7 @@ foreach ($package in $packages) {
             throw "Incorrect repository metadata: $path"
         }
         if ($metadata.repository.commit -notmatch '^[0-9a-f]{40}$') { throw "Missing source commit metadata: $path" }
+        if ($ExpectedCommit -and $metadata.repository.commit -cne $ExpectedCommit) { throw "Package source commit does not match the release: $path" }
         if ($metadata.readme -cne 'README.md' -or [string]::IsNullOrWhiteSpace((Read-PackageText 'README.md'))) { throw "Missing package README: $path" }
         if ((Read-PackageText 'LICENSE').Replace("`r`n", "`n").TrimEnd() -cne $license) { throw "Package license differs from repository license: $path" }
         if ($null -eq $archive.GetEntry($package.Assembly)) { throw "Missing package assembly: $path" }

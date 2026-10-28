@@ -11,6 +11,10 @@ Version **1.1.0** is being prepared for release. The packages built from this
 branch have not been published. See the [release guide](docs/release.md),
 [release notes](CHANGELOG.md), and [MIT license](LICENSE).
 
+NuGet publication uses the [release publishing workflow](.github/workflows/publish.yml)
+after a GitHub Release is published and its `nuget` deployment is approved. It
+reuses verified packages from the matching successful main CI run.
+
 ```csharp
 using XBullet.EasyMapping;
 
