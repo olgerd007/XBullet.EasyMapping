@@ -1,0 +1,18 @@
+<Solution>
+  <Folder Name="/src/">
+    <Project Path="src/XBullet.EasyMapping.Abstractions/XBullet.EasyMapping.Abstractions.csproj" />
+    <Project Path="src/XBullet.EasyMapping.Generator/XBullet.EasyMapping.Generator.csproj" />
+  </Folder>
+  <Folder Name="/samples/">
+    <Project Path="samples/MappingComparison.AutoMapper/MappingComparison.AutoMapper.csproj" />
+    <Project Path="samples/MappingComparison.Contracts/MappingComparison.Contracts.csproj" />
+    <Project Path="samples/MappingComparison.EasyMapping/MappingComparison.EasyMapping.csproj" />
+    <Project Path="samples/MappingComparison.Facet/MappingComparison.Facet.csproj" />
+    <Project Path="samples/MappingComparison.Manual/MappingComparison.Manual.csproj" />
+    <Project Path="samples/MappingComparison.Mapperly/MappingComparison.Mapperly.csproj" />
+  </Folder>
+  <Folder Name="/tests/">
+    <Project Path="tests/MappingComparison.Tests/MappingComparison.Tests.csproj" />
+    <Project Path="tests/XBullet.EasyMapping.Generator.Tests/XBullet.EasyMapping.Generator.Tests.csproj" />
+  </Folder>
+</Solution>

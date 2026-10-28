@@ -1,0 +1,21 @@
+Mapper model approval v1
+mapper global::NullableSmokeMappings
+coverage Both
+mapping static global::PersonDto? Map(None global::PersonInput? source nullable=Annotated)
+  attribute global::XBullet.EasyMapping.MapIgnoreSourceAttribute("InternalNote")
+  attribute global::XBullet.EasyMapping.MapPropertyAttribute("Name", "DisplayName")
+model global::PersonDto kind=Class record=True readonly=False abstract=False sealed=True
+  base object
+  interface global::System.IEquatable<global::PersonDto>
+  property DisplayName : string nullable=NotAnnotated get=Public set=Public init required=False
+  property Id : int nullable=NotAnnotated get=Public set=Public init required=False
+  property Tags : global::System.Collections.Generic.List<string>? nullable=Annotated get=Public set=Public init required=False
+  constructor (None int Id nullable=NotAnnotated, None string DisplayName nullable=NotAnnotated, None global::System.Collections.Generic.List<string>? Tags nullable=Annotated)
+model global::PersonInput kind=Class record=True readonly=False abstract=False sealed=True
+  base object
+  interface global::System.IEquatable<global::PersonInput>
+  property Id : int nullable=NotAnnotated get=Public set=Public init required=False
+  property InternalNote : string nullable=NotAnnotated get=Public set=Public init required=False
+  property Name : string nullable=NotAnnotated get=Public set=Public init required=False
+  property Tags : global::System.Collections.Generic.List<string>? nullable=Annotated get=Public set=Public init required=False
+  constructor (None int Id nullable=NotAnnotated, None string Name nullable=NotAnnotated, None global::System.Collections.Generic.List<string>? Tags nullable=Annotated, None string InternalNote nullable=NotAnnotated)

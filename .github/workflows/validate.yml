@@ -1,0 +1,49 @@
+name: Validate Mapping
+
+on:
+  push:
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  validate:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: 10.0.x
+      - name: Restore pinned dependencies
+        shell: pwsh
+        run: |
+          dotnet restore XBullet.EasyMapping.slnx --locked-mode
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+          dotnet restore tests/Diagnostics/Mapperly.UnmappedTarget/Mapperly.UnmappedTarget.csproj --locked-mode
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+          dotnet restore tests/Diagnostics/Facet.InvalidInclude/Facet.InvalidInclude.csproj --locked-mode
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+      - name: Build
+        run: dotnet build XBullet.EasyMapping.slnx --no-restore --verbosity minimal -m:1
+      - name: Test DTO behavior
+        run: dotnet test tests/MappingComparison.Tests/MappingComparison.Tests.csproj --no-restore --no-build --verbosity minimal
+      - name: Test compiler behavior
+        run: dotnet test tests/XBullet.EasyMapping.Generator.Tests/XBullet.EasyMapping.Generator.Tests.csproj --no-restore --no-build --verbosity minimal
+      - name: Verify formatting
+        run: dotnet format XBullet.EasyMapping.slnx --no-restore --verify-no-changes
+      - name: Verify generator diagnostics
+        shell: pwsh
+        run: ./tools/Test-GeneratorDiagnostics.ps1
+      - name: Verify generated evidence
+        shell: pwsh
+        run: ./tools/Export-GeneratedMappings.ps1 -Verify
+      - name: Verify model approvals without updating
+        shell: pwsh
+        run: ./tools/Export-ModelApprovals.ps1 -Project samples/MappingComparison.EasyMapping/MappingComparison.EasyMapping.csproj
+      - name: Verify received-file build workflow
+        shell: pwsh
+        run: ./tools/Test-ModelApprovals.ps1
+      - name: Verify packed consumer
+        shell: pwsh
+        run: ./tools/Test-Package.ps1

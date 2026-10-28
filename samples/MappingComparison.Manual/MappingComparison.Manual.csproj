@@ -1,0 +1,5 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <ItemGroup>
+    <ProjectReference Include="../MappingComparison.Contracts/MappingComparison.Contracts.csproj" />
+  </ItemGroup>
+</Project>

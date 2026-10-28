@@ -1,0 +1,1 @@
+<REPO>/tests/Diagnostics/Mapperly.UnmappedTarget/InvalidMapping.cs(8,5): error RMG012: The member Missing on the mapping target type Mapperly.UnmappedTarget.Target was not found on the mapping source type Mapperly.UnmappedTarget.Source [<REPO>/tests/Diagnostics/Mapperly.UnmappedTarget/Mapperly.UnmappedTarget.csproj]

@@ -1,0 +1,57 @@
+<Project>
+  <PropertyGroup>
+    <EnableDefaultMapperApprovalItems Condition="'$(EnableDefaultMapperApprovalItems)' == ''">true</EnableDefaultMapperApprovalItems>
+    <_MapperApprovalItemExcludes>$(DefaultItemExcludes);**/bin/**;**/obj/**</_MapperApprovalItemExcludes>
+    <_MapperApprovalItemExcludes Condition="'$(BaseOutputPath)' != ''">$(_MapperApprovalItemExcludes);$([MSBuild]::EnsureTrailingSlash('$(BaseOutputPath)'))**</_MapperApprovalItemExcludes>
+    <_MapperApprovalItemExcludes Condition="'$(BaseIntermediateOutputPath)' != ''">$(_MapperApprovalItemExcludes);$([MSBuild]::EnsureTrailingSlash('$(BaseIntermediateOutputPath)'))**</_MapperApprovalItemExcludes>
+  </PropertyGroup>
+  <ItemGroup Condition="'$(EnableDefaultMapperApprovalItems)' == 'true'">
+    <AdditionalFiles Include="**/*.mapper.approved.txt"
+                     Exclude="$(_MapperApprovalItemExcludes);$(DefaultExcludesInProjectFolder);$(DefaultItemExcludesInProjectFolder);**/.*/**;@(AdditionalFiles)" />
+    <!-- Project-folder exclusions must not treat ../ in an explicit shared path as a hidden folder. -->
+    <AdditionalFiles Include="$(MapperApprovalDirectory)/*.mapper.approved.txt"
+                     Condition="'$(MapperApprovalDirectory)' != ''"
+                     Exclude="$(_MapperApprovalItemExcludes);@(AdditionalFiles)" />
+  </ItemGroup>
+
+  <UsingTask TaskName="MapperWriteReceivedApprovals"
+             TaskFactory="RoslynCodeTaskFactory"
+             AssemblyFile="$(MSBuildToolsPath)/Microsoft.Build.Tasks.Core.dll">
+    <ParameterGroup>
+      <GeneratedDirectory ParameterType="System.String" Required="true" />
+      <ApprovalDirectory ParameterType="System.String" />
+      <ProjectDirectory ParameterType="System.String" Required="true" />
+      <ApprovedFiles ParameterType="Microsoft.Build.Framework.ITaskItem[]" />
+    </ParameterGroup>
+    <Task>
+      <Code Type="Class" Language="cs" Source="$(MSBuildThisFileDirectory)MapperWriteReceivedApprovals.cs" />
+    </Task>
+  </UsingTask>
+
+  <Target Name="MapperPrepareReceivedApprovals" BeforeTargets="CoreCompile"
+          Condition="'$(DesignTimeBuild)' != 'true' and '$(IsCrossTargetingBuild)' != 'true'">
+    <PropertyGroup>
+      <EmitCompilerGeneratedFiles>true</EmitCompilerGeneratedFiles>
+      <CompilerGeneratedFilesOutputPath Condition="'$(CompilerGeneratedFilesOutputPath)' == ''">$(IntermediateOutputPath)MapperGenerated</CompilerGeneratedFilesOutputPath>
+      <_MapperApprovalCandidatesPrepared>true</_MapperApprovalCandidatesPrepared>
+    </PropertyGroup>
+    <MakeDir Directories="$(CompilerGeneratedFilesOutputPath)/XBullet.EasyMapping.Generator/XBullet.EasyMapping.Generator.MappingGenerator" />
+    <!-- Remove only old approval candidates so a failed compilation cannot export stale shapes. -->
+    <ItemGroup>
+      <_MapperOldApprovalCandidates Include="$(CompilerGeneratedFilesOutputPath)/XBullet.EasyMapping.Generator/XBullet.EasyMapping.Generator.MappingGenerator/*.ModelApproval.g.cs" />
+    </ItemGroup>
+    <Delete Files="@(_MapperOldApprovalCandidates)" />
+  </Target>
+
+  <!-- CoreBuild invokes _CleanRecordFileWrites on failure; AfterTargets=CoreCompile alone
+       would miss the EMAP011 builds that need received files most. -->
+  <Target Name="MapperWriteReceivedApprovals"
+          AfterTargets="CoreCompile;_CleanRecordFileWrites"
+          Condition="'$(_MapperApprovalCandidatesPrepared)' == 'true' and '$(DesignTimeBuild)' != 'true'">
+    <MapperWriteReceivedApprovals
+        GeneratedDirectory="$(CompilerGeneratedFilesOutputPath)/XBullet.EasyMapping.Generator/XBullet.EasyMapping.Generator.MappingGenerator"
+        ApprovalDirectory="$(MapperApprovalDirectory)"
+        ProjectDirectory="$(MSBuildProjectDirectory)"
+        ApprovedFiles="@(AdditionalFiles)" />
+  </Target>
+</Project>

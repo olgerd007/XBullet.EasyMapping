@@ -1,0 +1,13 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <EmitCompilerGeneratedFiles>true</EmitCompilerGeneratedFiles>
+    <CompilerGeneratedFilesOutputPath>$(BaseIntermediateOutputPath)generated</CompilerGeneratedFilesOutputPath>
+  </PropertyGroup>
+  <ItemGroup>
+    <ProjectReference Include="../MappingComparison.Contracts/MappingComparison.Contracts.csproj" />
+    <ProjectReference Include="../../src/XBullet.EasyMapping.Abstractions/XBullet.EasyMapping.Abstractions.csproj" />
+    <ProjectReference Include="../../src/XBullet.EasyMapping.Generator/XBullet.EasyMapping.Generator.csproj" OutputItemType="Analyzer" ReferenceOutputAssembly="false" />
+  </ItemGroup>
+  <!-- ProjectReference consumers import the build integration explicitly; NuGet does this automatically. -->
+  <Import Project="../../src/XBullet.EasyMapping.Generator/buildTransitive/XBullet.EasyMapping.targets" />
+</Project>

@@ -1,0 +1,5 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <ItemGroup>
+    <PackageReference Include="Facet" PrivateAssets="all" />
+  </ItemGroup>
+</Project>

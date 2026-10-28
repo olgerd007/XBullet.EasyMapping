@@ -1,0 +1,14 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <IsTestProject>true</IsTestProject>
+  </PropertyGroup>
+  <ItemGroup>
+    <PackageReference Include="Microsoft.NET.Test.Sdk" />
+    <PackageReference Include="xunit" />
+    <PackageReference Include="xunit.runner.visualstudio" PrivateAssets="all" />
+    <PackageReference Include="Microsoft.CodeAnalysis.CSharp" />
+    <!-- Tests invoke the generator directly and also compile typed model fixtures through it. -->
+    <ProjectReference Include="../../src/XBullet.EasyMapping.Generator/XBullet.EasyMapping.Generator.csproj" OutputItemType="Analyzer" ReferenceOutputAssembly="true" />
+    <ProjectReference Include="../../src/XBullet.EasyMapping.Abstractions/XBullet.EasyMapping.Abstractions.csproj" />
+  </ItemGroup>
+</Project>

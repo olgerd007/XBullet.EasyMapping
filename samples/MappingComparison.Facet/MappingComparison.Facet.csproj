@@ -1,0 +1,10 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <EmitCompilerGeneratedFiles>true</EmitCompilerGeneratedFiles>
+    <CompilerGeneratedFilesOutputPath>$(BaseIntermediateOutputPath)generated</CompilerGeneratedFilesOutputPath>
+  </PropertyGroup>
+  <ItemGroup>
+    <PackageReference Include="Facet" PrivateAssets="contentfiles;analyzers;build;buildtransitive" />
+    <ProjectReference Include="../MappingComparison.Contracts/MappingComparison.Contracts.csproj" />
+  </ItemGroup>
+</Project>

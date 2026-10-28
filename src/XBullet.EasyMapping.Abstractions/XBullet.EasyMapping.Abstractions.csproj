@@ -1,0 +1,13 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <TargetFramework>netstandard2.0</TargetFramework>
+    <LangVersion>12</LangVersion>
+    <IsPackable>true</IsPackable>
+    <Version>0.1.0</Version>
+    <PackageReadmeFile>README.md</PackageReadmeFile>
+    <Description>Compile-time mapping declarations for XBullet.EasyMapping.</Description>
+  </PropertyGroup>
+  <ItemGroup>
+    <None Include="../../docs/easy-mapping.md" Pack="true" PackagePath="README.md" />
+  </ItemGroup>
+</Project>

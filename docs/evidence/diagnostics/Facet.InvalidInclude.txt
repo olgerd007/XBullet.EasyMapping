@@ -1,0 +1,1 @@
+<REPO>/tests/Diagnostics/Facet.InvalidInclude/InvalidFacet.cs(5,2): error FAC004: Property 'Missing' in Include does not exist in source type 'Facet.InvalidInclude.Source' [<REPO>/tests/Diagnostics/Facet.InvalidInclude/Facet.InvalidInclude.csproj]

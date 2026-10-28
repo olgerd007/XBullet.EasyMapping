@@ -1,0 +1,54 @@
+Mapper model approval v1
+mapper global::MappingComparison.EasyMapping.PersonMappings
+coverage Both
+mapping static global::MappingComparison.Contracts.AddressDto MapAddress(None global::MappingComparison.Contracts.AddressInput source nullable=NotAnnotated)
+mapping static global::MappingComparison.Contracts.PersonDto? ToDto(None global::MappingComparison.Contracts.PersonInput? source nullable=Annotated)
+  attribute global::XBullet.EasyMapping.MapIgnoreSourceAttribute("InternalNote")
+  attribute global::XBullet.EasyMapping.MapPropertyAttribute("Name", "DisplayName")
+mapping static void Update(None global::MappingComparison.Contracts.ProfileUpdate source nullable=NotAnnotated, None global::MappingComparison.Contracts.EditableProfile target nullable=NotAnnotated)
+  attribute global::XBullet.EasyMapping.MapIgnoreTargetAttribute("Id")
+  attribute global::XBullet.EasyMapping.MapIgnoreTargetAttribute("ServerNote")
+model global::MappingComparison.Contracts.AddressDto kind=Class record=True readonly=False abstract=False sealed=True
+  base object
+  interface global::System.IEquatable<global::MappingComparison.Contracts.AddressDto>
+  property City : string nullable=NotAnnotated get=Public set=Public init required=False
+  property Street : string nullable=NotAnnotated get=Public set=Public init required=False
+  constructor (None string City nullable=NotAnnotated, None string Street nullable=NotAnnotated)
+model global::MappingComparison.Contracts.AddressInput kind=Class record=True readonly=False abstract=False sealed=True
+  base object
+  interface global::System.IEquatable<global::MappingComparison.Contracts.AddressInput>
+  property City : string nullable=NotAnnotated get=Public set=Public init required=False
+  property Street : string nullable=NotAnnotated get=Public set=Public init required=False
+  constructor (None string City nullable=NotAnnotated, None string Street nullable=NotAnnotated)
+model global::MappingComparison.Contracts.EditableProfile kind=Class record=False readonly=False abstract=False sealed=True
+  base object
+  property Id : int nullable=NotAnnotated get=Public set=Public init required=False
+  property Name : string? nullable=Annotated get=Public set=Public required=False
+  property ServerNote : string nullable=NotAnnotated get=Public set=Public required=False
+  property Tags : global::System.Collections.Generic.List<string>? nullable=Annotated get=Public set=Public required=False
+  constructor ()
+model global::MappingComparison.Contracts.PersonDto kind=Class record=True readonly=False abstract=False sealed=True
+  base object
+  interface global::System.IEquatable<global::MappingComparison.Contracts.PersonDto>
+  property Address : global::MappingComparison.Contracts.AddressDto? nullable=Annotated get=Public set=Public init required=False
+  property DisplayName : string nullable=NotAnnotated get=Public set=Public init required=False
+  property Id : int nullable=NotAnnotated get=Public set=Public init required=False
+  property PreviousAddresses : global::System.Collections.Generic.List<global::MappingComparison.Contracts.AddressDto>? nullable=Annotated get=Public set=Public init required=False
+  property Tags : global::System.Collections.Generic.List<string>? nullable=Annotated get=Public set=Public init required=False
+  constructor (None int Id nullable=NotAnnotated, None string DisplayName nullable=NotAnnotated, None global::MappingComparison.Contracts.AddressDto? Address nullable=Annotated, None global::System.Collections.Generic.List<string>? Tags nullable=Annotated, None global::System.Collections.Generic.List<global::MappingComparison.Contracts.AddressDto>? PreviousAddresses nullable=Annotated)
+model global::MappingComparison.Contracts.PersonInput kind=Class record=True readonly=False abstract=False sealed=True
+  base object
+  interface global::System.IEquatable<global::MappingComparison.Contracts.PersonInput>
+  property Address : global::MappingComparison.Contracts.AddressInput? nullable=Annotated get=Public set=Public init required=False
+  property Id : int nullable=NotAnnotated get=Public set=Public init required=False
+  property InternalNote : string nullable=NotAnnotated get=Public set=Public init required=False
+  property Name : string nullable=NotAnnotated get=Public set=Public init required=False
+  property PreviousAddresses : global::System.Collections.Generic.List<global::MappingComparison.Contracts.AddressInput>? nullable=Annotated get=Public set=Public init required=False
+  property Tags : global::System.Collections.Generic.List<string>? nullable=Annotated get=Public set=Public init required=False
+  constructor (None int Id nullable=NotAnnotated, None string Name nullable=NotAnnotated, None global::MappingComparison.Contracts.AddressInput? Address nullable=Annotated, None global::System.Collections.Generic.List<string>? Tags nullable=Annotated, None global::System.Collections.Generic.List<global::MappingComparison.Contracts.AddressInput>? PreviousAddresses nullable=Annotated, None string InternalNote nullable=NotAnnotated)
+model global::MappingComparison.Contracts.ProfileUpdate kind=Class record=True readonly=False abstract=False sealed=True
+  base object
+  interface global::System.IEquatable<global::MappingComparison.Contracts.ProfileUpdate>
+  property Name : string? nullable=Annotated get=Public set=Public init required=False
+  property Tags : global::System.Collections.Generic.List<string>? nullable=Annotated get=Public set=Public init required=False
+  constructor (None string? Name nullable=Annotated, None global::System.Collections.Generic.List<string>? Tags nullable=Annotated)

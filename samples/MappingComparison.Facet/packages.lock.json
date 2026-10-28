@@ -1,0 +1,24 @@
+{
+  "version": 2,
+  "dependencies": {
+    "net10.0": {
+      "Facet": {
+        "type": "Direct",
+        "requested": "[6.6.15, )",
+        "resolved": "6.6.15",
+        "contentHash": "4AbipW5TJtvlyV1CjCup/UQYNxbD/DGpQ6Ew62z7q2KjJIZyHVxZuyNpLgaVEwfeUXyOwHIX8Z9kA1tp2xg+AA==",
+        "dependencies": {
+          "Facet.Attributes": "6.6.15"
+        }
+      },
+      "Facet.Attributes": {
+        "type": "Transitive",
+        "resolved": "6.6.15",
+        "contentHash": "Q7n16O1ylE/U09uDMNgXjyClhMFBq8tj3bJwLdnSTf0gra9hoO+s/iXv5gVy7UFpm8/O4gd5vBS2s1/Q36164g=="
+      },
+      "mappingcomparison.contracts": {
+        "type": "Project"
+      }
+    }
+  }
+}

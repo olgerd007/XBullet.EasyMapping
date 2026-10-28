@@ -1,0 +1,28 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <TargetFramework>netstandard2.0</TargetFramework>
+    <LangVersion>12</LangVersion>
+    <IsPackable>true</IsPackable>
+    <Version>0.1.0</Version>
+    <PackageId>XBullet.EasyMapping</PackageId>
+    <Description>Source-generated DTO mappings without runtime reflection.</Description>
+    <IncludeBuildOutput>false</IncludeBuildOutput>
+    <PackageReadmeFile>README.md</PackageReadmeFile>
+    <EnforceExtendedAnalyzerRules>true</EnforceExtendedAnalyzerRules>
+    <!-- The optional review helper is invoked manually, never as a NuGet install script. -->
+    <NoWarn>$(NoWarn);NU5111</NoWarn>
+  </PropertyGroup>
+  <ItemGroup>
+    <PackageReference Include="Microsoft.CodeAnalysis.CSharp" PrivateAssets="all" />
+    <ProjectReference Include="../XBullet.EasyMapping.Abstractions/XBullet.EasyMapping.Abstractions.csproj" />
+    <None Include="../../docs/easy-mapping.md" Pack="true" PackagePath="README.md" />
+    <None Include="../../tools/Export-ModelApprovals.ps1" Pack="true" PackagePath="tools/Export-ModelApprovals.ps1" />
+    <None Include="$(OutputPath)$(AssemblyName).dll" Pack="true" PackagePath="analyzers/dotnet/cs" Visible="false" />
+    <None Include="package/_._" Pack="true" PackagePath="lib/netstandard2.0/_._" />
+    <Compile Remove="buildTransitive/MapperWriteReceivedApprovals.cs" />
+    <None Include="buildTransitive/MapperWriteReceivedApprovals.cs" Pack="true" PackagePath="buildTransitive/MapperWriteReceivedApprovals.cs" />
+    <None Update="buildTransitive/XBullet.EasyMapping.targets" Pack="true" PackagePath="buildTransitive/XBullet.EasyMapping.targets" />
+    <AdditionalFiles Include="AnalyzerReleases.Shipped.md" />
+    <AdditionalFiles Include="AnalyzerReleases.Unshipped.md" />
+  </ItemGroup>
+</Project>
