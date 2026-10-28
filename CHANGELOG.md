@@ -1,6 +1,6 @@
 # Changelog
 
-## 1.1.0 — Unreleased
+## 1.1.0 — 2026-10-28
 
 - Add an owned incremental C# generator for typed DTO creation and existing-target updates.
 - Support constructors, required/init members, inherited properties, nullable roots/members,
@@ -17,7 +17,7 @@
 - Configure Windows/Ubuntu CI with documentation, package-content checks, test results,
   and verified package artifacts.
 
-This is the first prepared public release of the owned generator. Earlier `0.1.0`
+This is the first public source release of the owned generator. Earlier `0.1.0`
 packages were local prototypes. Public namespace and package names remain unchanged.
 
 EF projections, arbitrary cyclic graphs/reference tracking, presence-aware PATCH

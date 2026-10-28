@@ -7,8 +7,9 @@ are deferred.
 Read the [EasyMapping API and semantics](docs/easy-mapping.md) to use the first
 implementation. The [comparison results](docs/dto-comparison-results.md) and
 [initial investigation](docs/mapping-investigation.md) retain the earlier evidence.
-Version **1.1.0** is being prepared for release. The packages built from this
-branch have not been published. See the [release guide](docs/release.md),
+Version **1.1.0** is the first public source release of the owned generator.
+NuGet publication completes after approval of the release deployment.
+See the [release guide](docs/release.md),
 [release notes](CHANGELOG.md), and [MIT license](LICENSE).
 
 NuGet publication uses the [release publishing workflow](.github/workflows/publish.yml)

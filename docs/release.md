@@ -1,7 +1,8 @@
 # Release 1.1.0
 
-This document describes release preparation. It does not mean a tag, GitHub Release,
-or NuGet publication exists. The `v1.1.0` branch is separate from a `v1.1.0` tag.
+This document describes the release procedure. The `v1.1.0` tag and GitHub Release
+identify the tested source commit; NuGet publication completes separately after
+approval of the `nuget` deployment. The `v1.1.0` branch is separate from the tag.
 
 ## Release contents
 
