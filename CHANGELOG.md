@@ -1,8 +1,6 @@
 # Changelog
 
-## Unreleased
-
-### 1.1.1
+## 1.1.1 — 2026-10-28
 
 - Remove identity LINQ projections when copying collection elements.
 - Generate capacity-sized loops for converted lists from arrays and standard

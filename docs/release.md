@@ -1,9 +1,10 @@
 # Releases and versioning
 
-This document describes the release procedure for the working version, **1.1.1**.
-It is not published until the release steps below complete. The published **1.1.0**
-release remains immutable. A `v<version>` tag and GitHub Release identify the tested
-source commit; NuGet publication completes after approval of the `nuget` deployment.
+This document describes the release procedure for **1.1.1**, dated 2026-10-28.
+NuGet publication is complete only when the publishing workflow succeeds. The
+published **1.1.0** release remains immutable. A `v<version>` tag and GitHub Release
+identify the tested source commit; NuGet publication completes after approval of
+the `nuget` deployment.
 
 ## Release contents
 

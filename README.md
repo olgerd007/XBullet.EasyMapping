@@ -8,7 +8,7 @@ Read the [EasyMapping API and semantics](docs/easy-mapping.md) to use the first
 implementation. The [comparison results](docs/dto-comparison-results.md) and
 [initial investigation](docs/mapping-investigation.md) retain the earlier evidence.
 Version **1.1.0** is the first published release of the owned generator.
-The working version is **1.1.1**, an unreleased performance and CI maintenance patch.
+Version **1.1.1** adds collection-mapping performance improvements and CI maintenance.
 See the [release guide](docs/release.md),
 [release notes](CHANGELOG.md), and [MIT license](LICENSE).
 
