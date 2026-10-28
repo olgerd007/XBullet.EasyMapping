@@ -1,3 +1,4 @@
+using System.Text;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
 
@@ -20,9 +21,12 @@ internal sealed class ConversionBuilder
         _candidates = candidates;
         _report = report;
         _names = new HashSet<string>(method.Parameters.Select(parameter => parameter.Name), StringComparer.Ordinal);
+        _names.UnionWith(method.ContainingType.GetMembers().Select(member => member.Name));
     }
 
     public HashSet<IMethodSymbol> Dependencies { get; } = new(SymbolEqualityComparer.Default);
+
+    public List<string> CollectionHelpers { get; } = [];
 
     public string NewName()
     {
@@ -74,6 +78,16 @@ internal sealed class ConversionBuilder
         {
             var item = NewName();
             var converted = Convert(sourceElement, targetElement, item, member + "[]");
+            if (converted == item)
+            {
+                return $"global::System.Linq.Enumerable.{(array ? "ToArray" : "ToList")}({expression})";
+            }
+
+            if (!array && TryCollectionCount(source, out var countMember))
+            {
+                return BuildListConversion(source, targetElement, expression, item, converted, countMember);
+            }
+
             var select = $"global::System.Linq.Enumerable.Select({expression}, {item} => {converted})";
             return $"global::System.Linq.Enumerable.{(array ? "ToArray" : "ToList")}({select})";
         }
@@ -91,6 +105,49 @@ internal sealed class ConversionBuilder
         }
 
         return Fail(source, target, member, "declare a mapping method or a handwritten converter for this type pair");
+    }
+
+    private string BuildListConversion(ITypeSymbol source, ITypeSymbol targetElement, string expression,
+        string item, string converted, string countMember)
+    {
+        var helper = NewName();
+        var input = NewName();
+        var output = NewName();
+        var listType = $"global::System.Collections.Generic.List<{SymbolNames.Type(targetElement)}>";
+        var body = new StringBuilder();
+        body.Append(_method.IsStatic ? "static " : "").Append(listType).Append(' ').Append(helper)
+            .Append('(').Append(SymbolNames.Type(source)).Append(' ').Append(input).AppendLine(") {")
+            .Append("var ").Append(output).Append(" = new ").Append(listType).Append('(')
+            .Append(input).Append('.').Append(countMember).AppendLine(");")
+            .Append("foreach (var ").Append(item).Append(" in ").Append(input).AppendLine(") {")
+            .Append(output).Append(".Add(").Append(converted).AppendLine(");")
+            .AppendLine("}")
+            .Append("return ").Append(output).AppendLine(";")
+            .AppendLine("}");
+        CollectionHelpers.Add(body.ToString());
+        return helper + "(" + expression + ")";
+    }
+
+    private static bool TryCollectionCount(ITypeSymbol source, out string member)
+    {
+        if (source is IArrayTypeSymbol { Rank: 1 })
+        {
+            member = "Length";
+            return true;
+        }
+
+        // Keep arbitrary enumerables on the existing single-pass LINQ path. Restrict
+        // direct enumeration to framework contracts with predictable element/count members.
+        if (source is INamedTypeSymbol { IsGenericType: true } named &&
+            named.ContainingNamespace.ToDisplayString() == "System.Collections.Generic" &&
+            named.Name is "List" or "IList" or "IReadOnlyList" or "ICollection" or "IReadOnlyCollection")
+        {
+            member = "Count";
+            return true;
+        }
+
+        member = "";
+        return false;
     }
 
     private IEnumerable<IMethodSymbol> FindCandidates(ITypeSymbol source, ITypeSymbol target, bool exact) =>

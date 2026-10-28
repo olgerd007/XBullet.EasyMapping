@@ -1,15 +1,17 @@
-# Release 1.1.0
+# Releases and versioning
 
-This document describes the release procedure. The `v1.1.0` tag and GitHub Release
-identify the tested source commit; NuGet publication completes separately after
-approval of the `nuget` deployment. The `v1.1.0` branch is separate from the tag.
+This document describes the release procedure for **1.1.1**, dated 2026-10-28.
+NuGet publication is complete only when the publishing workflow succeeds. The
+published **1.1.0** release remains immutable. A `v<version>` tag and GitHub Release
+identify the tested source commit; NuGet publication completes after approval of
+the `nuget` deployment.
 
 ## Release contents
 
 | Package | Version | Purpose |
 | --- | --- | --- |
-| XBullet.EasyMapping | 1.1.0 | Compiler generator, automatic approval discovery, MSBuild integration, and optional review helper |
-| XBullet.EasyMapping.Abstractions | 1.1.0 | Mapping declaration attributes and coverage options |
+| XBullet.EasyMapping | 1.1.1 | Compiler generator, automatic approval discovery, MSBuild integration, and optional review helper |
+| XBullet.EasyMapping.Abstractions | 1.1.1 | Mapping declaration attributes and coverage options |
 
 Both packages target .NET Standard 2.0 and use the [MIT license](../LICENSE).
 The generator is built against Roslyn 4.8; compiler scenarios use C# 12. Samples,
@@ -28,6 +30,41 @@ Compiler DLLs and compiler package dependencies must not enter the runtime contr
 The analyzer release baseline is recorded under `AnalyzerReleases.Shipped.md` for
 1.1.0. New diagnostic IDs after this release belong in `AnalyzerReleases.Unshipped.md`.
 
+Both packages share one manually maintained Semantic Version in `Directory.Build.props`:
+
+- Patch: compatible fixes, performance improvements, and maintenance, such as 1.1.1.
+- Minor: new supported mapping capabilities or compatible public APIs, such as 1.2.0.
+- Major: breaking changes to public APIs, mapping semantics, or supported compiler hosts.
+
+Bump the working version after a release before producing changed package candidates.
+Never move a published tag or reuse a published package version. The tag must match
+the checked-in version exactly; publishing cannot override it. Release-note URLs use
+that version rather than a separately maintained hard-coded tag.
+
+Manual previews use a full checked-in version such as `1.2.0-preview.1`, a matching
+`v1.2.0-preview.1` tag, and GitHub's pre-release option. Stable releases must not use
+that option. The publishing gate verifies both cases. CI does not automatically bump
+versions or publish preview packages. Candidate artifacts are consumed from a local
+feed; publishing a preview and publishing a stable version are separate validations.
+
+## Compatibility and coverage
+
+The attributes project uses `PublicAPI.Shipped.txt` for the published API and
+`PublicAPI.Unshipped.txt` for intentional additions. Review API changes explicitly;
+move approved additions to the shipped file when releasing them. The public API
+analyzer is private build tooling and is not a consumer dependency. The NuGet package
+validator compares the attributes package with published **1.1.0** for binary
+compatibility. Update the baseline to the latest stable version after publication.
+It does not validate the analyzer-only generator's behavior: compiler, diagnostic,
+generated-code, incremental, model-approval, and packed-consumer tests cover that.
+
+The generator test project collects Coverlet coverage for the generator and attributes
+assemblies using `tools/coverage.runsettings`. The gate requires 95% line and 80%
+branch coverage for the generator, and 100% for the attributes. Initial Release
+measurements were 96.99% lines / 85.26% branches and 100% respectively. Generated
+consumer mappings and comparison libraries are outside these production-package
+coverage totals. Coverage is a regression gate alongside semantic tests.
+
 ## Local validation
 
 Run from the repository root with the .NET 10 SDK and PowerShell 7:
@@ -36,14 +73,18 @@ Run from the repository root with the .NET 10 SDK and PowerShell 7:
 dotnet restore XBullet.EasyMapping.slnx --locked-mode
 dotnet restore tests/Diagnostics/Mapperly.UnmappedTarget/Mapperly.UnmappedTarget.csproj --locked-mode
 dotnet restore tests/Diagnostics/Facet.InvalidInclude/Facet.InvalidInclude.csproj --locked-mode
-dotnet build XBullet.EasyMapping.slnx --no-restore --verbosity minimal -m:1
-dotnet test tests/MappingComparison.Tests/MappingComparison.Tests.csproj --no-restore --no-build --verbosity minimal
-dotnet test tests/XBullet.EasyMapping.Generator.Tests/XBullet.EasyMapping.Generator.Tests.csproj --no-restore --no-build --verbosity minimal
+dotnet build XBullet.EasyMapping.slnx --no-restore --configuration Release --verbosity minimal -m:1
+dotnet test tests/MappingComparison.Tests/MappingComparison.Tests.csproj --no-restore --no-build --configuration Release --verbosity minimal
+# Use a fresh results directory for every coverage run; the gate rejects stale/duplicate reports.
+$results = "artifacts/test-results/coverage-$([guid]::NewGuid().ToString('N'))"
+dotnet test tests/XBullet.EasyMapping.Generator.Tests/XBullet.EasyMapping.Generator.Tests.csproj --no-restore --no-build --configuration Release --verbosity minimal --collect "XPlat Code Coverage" --settings tools/coverage.runsettings --results-directory $results
+./tools/Test-Coverage.ps1 -ResultsDirectory $results
+./tools/Test-CiChecks.ps1
 dotnet format XBullet.EasyMapping.slnx --no-restore --verify-no-changes
 ./tools/Test-Documentation.ps1
 ./tools/Test-GeneratorDiagnostics.ps1
 ./tools/Export-GeneratedMappings.ps1 -Verify
-./tools/Export-ModelApprovals.ps1 -Project samples/MappingComparison.EasyMapping/MappingComparison.EasyMapping.csproj
+./tools/Export-ModelApprovals.ps1 -Project samples/MappingComparison.EasyMapping/MappingComparison.EasyMapping.csproj -Configuration Release
 ./tools/Test-ModelApprovals.ps1
 ./tools/Test-Package.ps1
 ./tools/Test-Publishing.ps1
@@ -53,7 +94,7 @@ Each command must succeed. The two intentionally invalid fixture builds are chec
 by `Test-GeneratorDiagnostics.ps1`, which accepts only their expected error IDs and
 messages. Review changed snapshots; validation never approves model changes.
 
-Packages are written to `artifacts/packages/1.1.0/`. The pack script verifies their
+Packages are written to `artifacts/packages/1.1.1/`. The pack script verifies their
 contents before restoring and executing a fresh consumer, then tests the received/
 approved workflow. It never publishes anything.
 
@@ -62,8 +103,16 @@ approved workflow. It never publishes anything.
 The [validation workflow](../.github/workflows/validate.yml) runs for pushes, pull
 requests, and manual dispatches. It uses pinned GitHub Actions commits, locked
 restore, a Windows/Ubuntu matrix, read-only repository permissions, and a job timeout.
-It uploads TRX results on failure and retains packages from the successful Windows
+It builds and tests in Release, uploads TRX results and coverage even on failure,
+and retains packages from the successful Windows
 job. These artifacts are candidates until both matrix jobs pass for the same commit.
+
+NuGet restore audits direct and transitive dependencies at moderate severity or
+higher, with warnings treated as errors. [Dependency review](../.github/workflows/dependency-review.yml)
+checks pull requests; [CodeQL](../.github/workflows/codeql.yml) analyzes C# on main,
+pull requests, and weekly. [Dependabot](../.github/dependabot.yml) proposes weekly
+NuGet and pinned Actions updates. Roslyn minor/major updates require deliberate
+compiler-host compatibility review, so Dependabot does not propose them automatically.
 
 Before publishing:
 
@@ -75,7 +124,7 @@ Before publishing:
 4. Confirm ownership of both NuGet package IDs and configure a publishing identity
    with permission to publish them. Never store API keys in source control.
 5. Change the changelog's `Unreleased` label to the actual release date, commit it,
-   and rerun CI before creating the `v1.1.0` tag on the final release commit.
+   and rerun CI before creating the `v1.1.1` tag on the final release commit.
 6. Publish the GitHub Release for the tag, then review and approve the `nuget`
    deployment. The publishing workflow uploads the attributes package first,
    then the generator, and attaches the same verified packages to the release.
@@ -122,12 +171,17 @@ If CI artifacts expire, rerun the original main push validation before publishin
 Rerunning a partially completed publish accepts an existing NuGet version only
 when its recorded source commit matches this release. Other versions are not
 overwritten. Matching existing GitHub release assets are retained; mismatched
-assets stop the workflow. NuGet indexing is checked after each package push.
+assets stop the workflow. NuGet indexing is checked after each package push for up
+to 180 attempts, five seconds apart, with a 30-second timeout on each read. Publishing
+has a 40-minute job limit. An indexing timeout after a successful push is distinct
+from a rejected push: inspect the feed and source commit, then rerun the same release.
+Do not create a new version merely to recover that timeout. This recovered the
+initial 1.1.0 release, whose first run pushed both packages before timing out.
 
 For a local dry run, download the validated CI packages and run:
 
 ```powershell
-./tools/Publish-Packages.ps1 -PackageDirectory <downloaded-package-directory> -Version 1.1.0 -Commit <full-tagged-commit-sha> -WhatIf
+./tools/Publish-Packages.ps1 -PackageDirectory <downloaded-package-directory> -Version 1.1.1 -Commit <full-tagged-commit-sha> -WhatIf
 ```
 
 The dry run validates the packages and reports the two planned pushes. It requests

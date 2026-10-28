@@ -33,8 +33,11 @@ Use a top-level, non-generic partial class. Both static mappers and instance map
 are supported. Instance mapper constructors and dependencies remain normal C#.
 Source and destination DTOs do not need mapping annotations.
 
-Generated methods use direct constructors, initializers, assignments, and LINQ
-collection materialization. They do not perform runtime type discovery or reflection.
+Generated methods use direct constructors, initializers, assignments, and collection
+materialization. Identity element mappings copy directly; converted list mappings
+from arrays and standard counted collection contracts use capacity-sized loops.
+Other converted collection mappings retain LINQ materialization.
+They do not perform runtime type discovery or reflection.
 Configuration attribute usages are omitted from emitted metadata by default; define
 `MAPPER_PRESERVE_ATTRIBUTES` only if runtime inspection is required, retaining
 the attributes assembly in that case.

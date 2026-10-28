@@ -6,6 +6,7 @@
     <PackageReference Include="Microsoft.NET.Test.Sdk" />
     <PackageReference Include="xunit" />
     <PackageReference Include="xunit.runner.visualstudio" PrivateAssets="all" />
+    <ProjectReference Include="../../benchmarks/MappingComparison.Benchmarks/MappingComparison.Benchmarks.csproj" />
     <ProjectReference Include="../../samples/MappingComparison.Manual/MappingComparison.Manual.csproj" />
     <ProjectReference Include="../../samples/MappingComparison.AutoMapper/MappingComparison.AutoMapper.csproj" />
     <ProjectReference Include="../../samples/MappingComparison.Mapperly/MappingComparison.Mapperly.csproj" />

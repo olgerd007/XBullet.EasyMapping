@@ -1,5 +1,8 @@
 [CmdletBinding()]
-param()
+param(
+    [ValidateSet('Debug', 'Release')]
+    [string] $Configuration = 'Release'
+)
 
 $ErrorActionPreference = 'Stop'
 $repositoryRoot = Split-Path -Parent $PSScriptRoot
@@ -12,18 +15,18 @@ $packageCache = Join-Path $repositoryRoot "artifacts/package-smoke-cache/$([guid
 
 Push-Location $repositoryRoot
 try {
-    & dotnet pack src/XBullet.EasyMapping.Abstractions/XBullet.EasyMapping.Abstractions.csproj --no-restore --configuration Release --output $packageRoot --verbosity minimal
+    & dotnet pack src/XBullet.EasyMapping.Abstractions/XBullet.EasyMapping.Abstractions.csproj --no-restore --configuration $Configuration --output $packageRoot --verbosity minimal
     if ($LASTEXITCODE -ne 0) { throw 'Packing the configuration attributes failed.' }
-    & dotnet pack src/XBullet.EasyMapping.Generator/XBullet.EasyMapping.Generator.csproj --no-restore --configuration Release --output $packageRoot --verbosity minimal
+    & dotnet pack src/XBullet.EasyMapping.Generator/XBullet.EasyMapping.Generator.csproj --no-restore --configuration $Configuration --output $packageRoot --verbosity minimal
     if ($LASTEXITCODE -ne 0) { throw 'Packing the generator failed.' }
     & "$PSScriptRoot/Test-PackageContents.ps1" -PackageDirectory $packageRoot -ExpectedVersion $releaseVersion
 
     $smokeProject = 'tests/PackageSmoke/PackageSmoke.csproj'
     & dotnet restore $smokeProject --source $packageRoot --packages $packageCache --verbosity minimal
     if ($LASTEXITCODE -ne 0) { throw 'Restoring the packed consumer failed.' }
-    & dotnet run --project $smokeProject --no-restore --configuration Release --verbosity minimal
+    & dotnet run --project $smokeProject --no-restore --configuration $Configuration --verbosity minimal
     if ($LASTEXITCODE -ne 0) { throw 'Executing the packed consumer failed.' }
-    & "$PSScriptRoot/Test-ModelApprovals.ps1" -PackageSource $packageRoot -PackageCache $packageCache
+    & "$PSScriptRoot/Test-ModelApprovals.ps1" -Configuration $Configuration -PackageSource $packageRoot -PackageCache $packageCache
 }
 finally {
     Pop-Location

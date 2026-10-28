@@ -1,6 +1,6 @@
 <Project>
   <PropertyGroup>
-    <Version>1.1.0</Version>
+    <Version>1.1.1</Version>
     <Authors>olgerd007</Authors>
     <PackageLicenseExpression>MIT</PackageLicenseExpression>
     <PackageProjectUrl>https://github.com/olgerd007/XBullet.EasyMapping</PackageProjectUrl>
@@ -8,7 +8,7 @@
     <RepositoryType>git</RepositoryType>
     <PublishRepositoryUrl>true</PublishRepositoryUrl>
     <PackageTags>mapping;mapper;source-generator;dto;roslyn</PackageTags>
-    <PackageReleaseNotes>https://github.com/olgerd007/XBullet.EasyMapping/blob/v1.1.0/CHANGELOG.md</PackageReleaseNotes>
+    <PackageReleaseNotes>https://github.com/olgerd007/XBullet.EasyMapping/blob/v$(Version)/CHANGELOG.md</PackageReleaseNotes>
     <ContinuousIntegrationBuild Condition="'$(CI)' == 'true'">true</ContinuousIntegrationBuild>
     <TargetFramework>net10.0</TargetFramework>
     <Nullable>enable</Nullable>
@@ -19,6 +19,9 @@
     <Deterministic>true</Deterministic>
     <IsPackable>false</IsPackable>
     <RestorePackagesWithLockFile>true</RestorePackagesWithLockFile>
+    <NuGetAudit>true</NuGetAudit>
+    <NuGetAuditMode>all</NuGetAuditMode>
+    <NuGetAuditLevel>moderate</NuGetAuditLevel>
   </PropertyGroup>
   <ItemGroup>
     <None Include="$(MSBuildThisFileDirectory)LICENSE" Pack="true" PackagePath="" />

@@ -17,7 +17,7 @@ $PSNativeCommandUseErrorActionPreference = $false
 function Test-PublishedVersion([string] $Id) {
     $lowerId = $Id.ToLowerInvariant()
     $lowerVersion = $Version.ToLowerInvariant()
-    try { $content = Invoke-WebRequest -Uri "https://api.nuget.org/v3-flatcontainer/$lowerId/$lowerVersion/$lowerId.nuspec" }
+    try { $content = Invoke-WebRequest -Uri "https://api.nuget.org/v3-flatcontainer/$lowerId/$lowerVersion/$lowerId.nuspec" -TimeoutSec 30 }
     catch {
         if ($null -ne $_.Exception.Response -and [int]$_.Exception.Response.StatusCode -eq 404) { return $false }
         throw
@@ -43,11 +43,6 @@ foreach ($id in @('XBullet.EasyMapping.Abstractions', 'XBullet.EasyMapping')) {
         & dotnet nuget push $path --source https://api.nuget.org/v3/index.json
         if ($LASTEXITCODE -ne 0) { throw "Publishing $id failed." }
     } else { Write-Output "Already published from this release commit: $id $Version" }
-    $indexed = $false
-    for ($attempt = 0; $attempt -lt 60; $attempt++) {
-        if (Test-PublishedVersion $id) { $indexed = $true; break }
-        Start-Sleep -Seconds 5
-    }
-    if (-not $indexed) { throw "$id was pushed but is not indexed yet. Check NuGet before rerunning this release." }
+    & "$PSScriptRoot/Wait-PackageIndexing.ps1" -PackageId $id -IsPublished { param($packageId) Test-PublishedVersion $packageId }
     Write-Output "Verified published version: $id $Version"
 }

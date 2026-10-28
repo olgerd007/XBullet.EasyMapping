@@ -44,11 +44,15 @@ jobs:
           dotnet restore tests/Diagnostics/Facet.InvalidInclude/Facet.InvalidInclude.csproj --locked-mode
           if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
       - name: Build
-        run: dotnet build XBullet.EasyMapping.slnx --no-restore --verbosity minimal -m:1
+        run: dotnet build XBullet.EasyMapping.slnx --no-restore --configuration Release --verbosity minimal -m:1
       - name: Test DTO behavior
-        run: dotnet test tests/MappingComparison.Tests/MappingComparison.Tests.csproj --no-restore --no-build --verbosity minimal --logger "trx;LogFileName=comparison.trx" --results-directory artifacts/test-results
+        run: dotnet test tests/MappingComparison.Tests/MappingComparison.Tests.csproj --no-restore --no-build --configuration Release --verbosity minimal --logger "trx;LogFileName=comparison.trx" --results-directory artifacts/test-results/comparison
       - name: Test compiler behavior
-        run: dotnet test tests/XBullet.EasyMapping.Generator.Tests/XBullet.EasyMapping.Generator.Tests.csproj --no-restore --no-build --verbosity minimal --logger "trx;LogFileName=generator.trx" --results-directory artifacts/test-results
+        run: dotnet test tests/XBullet.EasyMapping.Generator.Tests/XBullet.EasyMapping.Generator.Tests.csproj --no-restore --no-build --configuration Release --verbosity minimal --collect "XPlat Code Coverage" --settings tools/coverage.runsettings --logger "trx;LogFileName=generator.trx" --results-directory artifacts/test-results/generator
+      - name: Verify package coverage thresholds
+        run: ./tools/Test-Coverage.ps1 -ResultsDirectory artifacts/test-results/generator
+      - name: Test CI verification helpers
+        run: ./tools/Test-CiChecks.ps1
       - name: Verify formatting
         run: dotnet format XBullet.EasyMapping.slnx --no-restore --verify-no-changes
       - name: Verify generator diagnostics
@@ -56,7 +60,7 @@ jobs:
       - name: Verify generated evidence
         run: ./tools/Export-GeneratedMappings.ps1 -Verify
       - name: Verify model approvals without updating
-        run: ./tools/Export-ModelApprovals.ps1 -Project samples/MappingComparison.EasyMapping/MappingComparison.EasyMapping.csproj
+        run: ./tools/Export-ModelApprovals.ps1 -Project samples/MappingComparison.EasyMapping/MappingComparison.EasyMapping.csproj -Configuration Release
       - name: Verify received-file build workflow
         run: ./tools/Test-ModelApprovals.ps1
       - name: Verify packed consumer
@@ -68,7 +72,9 @@ jobs:
         uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
           name: test-results-${{ matrix.os }}
-          path: artifacts/test-results/*.trx
+          path: |
+            artifacts/test-results/**/*.trx
+            artifacts/test-results/**/coverage.cobertura.xml
           if-no-files-found: warn
           retention-days: 14
       - name: Retain verified release packages

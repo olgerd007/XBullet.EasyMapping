@@ -1,0 +1,19 @@
+version: 2
+updates:
+  - package-ecosystem: nuget
+    directory: /
+    schedule:
+      interval: weekly
+    open-pull-requests-limit: 5
+    ignore:
+      # Roslyn 4.8 is the supported compiler baseline, not just a build dependency.
+      - dependency-name: Microsoft.CodeAnalysis.CSharp
+        update-types: [version-update:semver-major, version-update:semver-minor]
+  - package-ecosystem: github-actions
+    directory: /
+    schedule:
+      interval: weekly
+    open-pull-requests-limit: 5
+    groups:
+      codeql:
+        patterns: ["github/codeql-action/*"]

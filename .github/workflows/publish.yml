@@ -35,6 +35,7 @@ jobs:
         id: release
         env:
           RELEASE_TAG: ${{ github.event.release.tag_name }}
+          RELEASE_PRERELEASE: ${{ github.event.release.prerelease }}
           GITHUB_TOKEN: ${{ github.token }}
         run: |
           $tag = $env:RELEASE_TAG
@@ -47,7 +48,7 @@ jobs:
           if ($LASTEXITCODE -ne 0) { throw 'Cannot read the tagged version.' }
           [xml] $props = $source -join "`n"
           $version = [string]$props.Project.PropertyGroup.Version
-          if ($tag -cne "v$version") { throw 'The tag does not match the package version.' }
+          ./tools/Test-ReleaseVersion.ps1 -Tag $tag -Version $version -Prerelease ([bool]::Parse($env:RELEASE_PRERELEASE))
           & git cat-file -e "${sha}:.github/workflows/publish.yml"
           if ($LASTEXITCODE -ne 0) { throw 'Tag a commit containing the publishing workflow.' }
           $artifact = & ./tools/Get-ReleaseArtifact.ps1 -Repository $env:GITHUB_REPOSITORY -Commit $sha
@@ -60,7 +61,7 @@ jobs:
     name: Publish approved packages
     needs: verify
     runs-on: ubuntu-latest
-    timeout-minutes: 20
+    timeout-minutes: 40
     environment: nuget
     permissions:
       contents: write

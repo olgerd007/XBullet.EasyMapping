@@ -1,0 +1,20 @@
+#nullable enable
+XBullet.EasyMapping.MapIgnoreSourceAttribute
+XBullet.EasyMapping.MapIgnoreSourceAttribute.MapIgnoreSourceAttribute(string! source) -> void
+XBullet.EasyMapping.MapIgnoreSourceAttribute.Source.get -> string!
+XBullet.EasyMapping.MapIgnoreTargetAttribute
+XBullet.EasyMapping.MapIgnoreTargetAttribute.MapIgnoreTargetAttribute(string! target) -> void
+XBullet.EasyMapping.MapIgnoreTargetAttribute.Target.get -> string!
+XBullet.EasyMapping.MapPropertyAttribute
+XBullet.EasyMapping.MapPropertyAttribute.MapPropertyAttribute(string! source, string! target) -> void
+XBullet.EasyMapping.MapPropertyAttribute.Source.get -> string!
+XBullet.EasyMapping.MapPropertyAttribute.Target.get -> string!
+XBullet.EasyMapping.MapperAttribute
+XBullet.EasyMapping.MapperAttribute.Coverage.get -> XBullet.EasyMapping.MappingCoverage
+XBullet.EasyMapping.MapperAttribute.Coverage.set -> void
+XBullet.EasyMapping.MapperAttribute.MapperAttribute() -> void
+XBullet.EasyMapping.MapperAttribute.RequireModelApproval.get -> bool
+XBullet.EasyMapping.MapperAttribute.RequireModelApproval.set -> void
+XBullet.EasyMapping.MappingCoverage
+XBullet.EasyMapping.MappingCoverage.Both = 1 -> XBullet.EasyMapping.MappingCoverage
+XBullet.EasyMapping.MappingCoverage.Target = 0 -> XBullet.EasyMapping.MappingCoverage

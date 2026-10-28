@@ -1,0 +1,13 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+  </PropertyGroup>
+  <ItemGroup>
+    <PackageReference Include="BenchmarkDotNet" />
+    <ProjectReference Include="../../samples/MappingComparison.Manual/MappingComparison.Manual.csproj" />
+    <ProjectReference Include="../../samples/MappingComparison.AutoMapper/MappingComparison.AutoMapper.csproj" />
+    <ProjectReference Include="../../samples/MappingComparison.Mapperly/MappingComparison.Mapperly.csproj" />
+    <ProjectReference Include="../../samples/MappingComparison.Facet/MappingComparison.Facet.csproj" />
+    <ProjectReference Include="../../samples/MappingComparison.EasyMapping/MappingComparison.EasyMapping.csproj" />
+  </ItemGroup>
+</Project>

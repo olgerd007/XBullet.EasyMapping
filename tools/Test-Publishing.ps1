@@ -64,8 +64,41 @@ function Invoke-RestMethod {
     }
     throw "Unexpected GitHub request: $Uri"
 }
-function Invoke-WebRequest { throw 'Publishing tests must never contact NuGet.' }
-function dotnet { throw 'Publishing tests must never execute dotnet or push packages.' }
+function Invoke-WebRequest {
+    param([string] $Uri, [int] $TimeoutSec)
+    if ($Uri -notmatch '/v3-flatcontainer/([^/]+)/') { throw "Unexpected NuGet request: $Uri" }
+    $id = $Matches[1]
+    if ($TimeoutSec -ne 30) { throw 'NuGet reads must have a timeout.' }
+    if ($publishingTestScenario -eq 'already-published' -or $publishingTestScenario -eq 'different-published-commit') {
+        $sourceCommit = if ($publishingTestScenario -eq 'different-published-commit') { $differentCommit } else { $Commit }
+    }
+    elseif ($publishingTestScenario -eq 'delayed-publication' -and $publicationState.Pushed.Contains($id)) {
+        $publicationState.Reads[$id]++
+        if ($publicationState.Reads[$id] -le 64) {
+            throw [Microsoft.PowerShell.Commands.HttpResponseException]::new('Not indexed yet',
+                [System.Net.Http.HttpResponseMessage]::new([System.Net.HttpStatusCode]::NotFound))
+        }
+        $sourceCommit = $Commit
+    }
+    elseif ($publishingTestScenario -eq 'delayed-publication') {
+        throw [Microsoft.PowerShell.Commands.HttpResponseException]::new('Not published yet',
+            [System.Net.Http.HttpResponseMessage]::new([System.Net.HttpStatusCode]::NotFound))
+    }
+    else { throw 'Publishing tests must never contact NuGet.' }
+    return @{ Content = "<package><metadata><id>$id</id><version>$Version</version><repository commit=`"$sourceCommit`" /></metadata></package>" }
+}
+function dotnet {
+    if ($args.Count -eq 1 -and $args[0] -eq '--version') { return '10.0.403' }
+    if ($publishingTestScenario -eq 'delayed-publication' -and $args[0] -eq 'nuget' -and $args[1] -eq 'push') {
+        $id = [System.IO.Path]::GetFileName($args[2]) -replace "\.$([regex]::Escape($Version))\.nupkg$", ''
+        $id = $id.ToLowerInvariant()
+        if (-not $publicationState.Pushed.Add($id)) { throw 'The same package must never be pushed twice.' }
+        $publicationState.Reads[$id] = 0
+        return
+    }
+    throw 'Publishing tests must never execute dotnet or push unexpected packages.'
+}
+function Start-Sleep { param([int] $Seconds) $publicationState.Sleeps++ }
 
 $publishingTestScenario = 'success'
 $artifact = & "$PSScriptRoot/Get-ReleaseArtifact.ps1" -Repository 'owner/repository' -Commit $Commit
@@ -88,4 +121,22 @@ Assert-Rejected {
     & "$PSScriptRoot/Publish-Packages.ps1" -PackageDirectory $PackageDirectory -Version '0.0.0-invalid' -Commit $Commit -WhatIf
 } 'Missing release package'
 
-Write-Output "Verified publishing gates: valid artifact, $($scenarios.Count) rejected CI/artifact scenarios, package dry run, commit mismatch, and missing version."
+$publicationState = @{ Pushed = [System.Collections.Generic.HashSet[string]]::new(); Reads = @{}; Sleeps = 0 }
+$originalKey = $env:NUGET_API_KEY
+try {
+    $env:NUGET_API_KEY = 'offline-test-placeholder'
+    $publishingTestScenario = 'already-published'
+    & "$PSScriptRoot/Publish-Packages.ps1" -PackageDirectory $PackageDirectory -Version $Version -Commit $Commit
+    if ($publicationState.Pushed.Count -ne 0) { throw 'Matching published versions must not be pushed again.' }
+    $publishingTestScenario = 'different-published-commit'
+    Assert-Rejected {
+        & "$PSScriptRoot/Publish-Packages.ps1" -PackageDirectory $PackageDirectory -Version $Version -Commit $Commit
+    } 'different source commit'
+    $publishingTestScenario = 'delayed-publication'
+    & "$PSScriptRoot/Publish-Packages.ps1" -PackageDirectory $PackageDirectory -Version $Version -Commit $Commit
+    if ($publicationState.Pushed.Count -ne 2 -or $publicationState.Sleeps -ne 128) {
+        throw 'Both packages must be pushed exactly once and tolerate delayed indexing.'
+    }
+}
+finally { $env:NUGET_API_KEY = $originalKey }
+Write-Output "Verified publishing gates: $($scenarios.Count) rejected CI/artifact scenarios, package dry run, version/commit rejection, idempotent reruns, and delayed indexing without real network calls or pushes."
