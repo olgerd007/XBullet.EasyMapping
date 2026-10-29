@@ -4,5 +4,8 @@ public abstract class OrderDtoBase
 {
     protected OrderDtoBase(OrderId id) => Id = id;
 
-    public OrderId Id { get; }
+    public OrderId Id
+    {
+        get;
+    }
 }

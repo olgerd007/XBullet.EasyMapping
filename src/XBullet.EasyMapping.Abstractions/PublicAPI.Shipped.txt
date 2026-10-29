@@ -1,4 +1,13 @@
 #nullable enable
+XBullet.EasyMapping.MapConstantAttribute
+XBullet.EasyMapping.MapConstantAttribute.MapConstantAttribute(string! target, object? value) -> void
+XBullet.EasyMapping.MapConstantAttribute.Target.get -> string!
+XBullet.EasyMapping.MapConstantAttribute.Value.get -> object?
+XBullet.EasyMapping.MapGeneratedValueAttribute
+XBullet.EasyMapping.MapGeneratedValueAttribute.MapGeneratedValueAttribute(string! target) -> void
+XBullet.EasyMapping.MapGeneratedValueAttribute.Target.get -> string!
+XBullet.EasyMapping.MapGeneratedValueAttribute.Use.get -> string?
+XBullet.EasyMapping.MapGeneratedValueAttribute.Use.set -> void
 XBullet.EasyMapping.MapIgnoreSourceAttribute
 XBullet.EasyMapping.MapIgnoreSourceAttribute.MapIgnoreSourceAttribute(string! source) -> void
 XBullet.EasyMapping.MapIgnoreSourceAttribute.Source.get -> string!
@@ -9,6 +18,8 @@ XBullet.EasyMapping.MapPropertyAttribute
 XBullet.EasyMapping.MapPropertyAttribute.MapPropertyAttribute(string! source, string! target) -> void
 XBullet.EasyMapping.MapPropertyAttribute.Source.get -> string!
 XBullet.EasyMapping.MapPropertyAttribute.Target.get -> string!
+XBullet.EasyMapping.MapPropertyAttribute.Use.get -> string?
+XBullet.EasyMapping.MapPropertyAttribute.Use.set -> void
 XBullet.EasyMapping.MapperAttribute
 XBullet.EasyMapping.MapperAttribute.Coverage.get -> XBullet.EasyMapping.MappingCoverage
 XBullet.EasyMapping.MapperAttribute.Coverage.set -> void

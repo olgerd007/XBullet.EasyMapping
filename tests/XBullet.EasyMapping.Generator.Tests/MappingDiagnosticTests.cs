@@ -66,7 +66,8 @@ public sealed class MappingDiagnosticTests
                 private static string Second(int value) => value.ToString();
             }
             """);
-        Assert.Contains(driver.GetRunResult().Diagnostics, diagnostic => diagnostic.Id == "EMAP007");
+        Assert.Contains(driver.GetRunResult().Diagnostics, diagnostic => diagnostic.Id == "EMAP007" &&
+            diagnostic.GetMessage().Contains("MapProperty.Use", StringComparison.Ordinal));
     }
 
     [Fact]

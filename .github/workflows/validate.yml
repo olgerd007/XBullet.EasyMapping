@@ -54,7 +54,13 @@ jobs:
       - name: Test CI verification helpers
         run: ./tools/Test-CiChecks.ps1
       - name: Verify formatting
-        run: dotnet format XBullet.EasyMapping.slnx --no-restore --verify-no-changes
+        run: |
+          dotnet format XBullet.EasyMapping.slnx --no-restore --verify-no-changes --severity info --diagnostics IDE0011 IDE0055 IDE2003
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+          foreach ($path in @('src/XBullet.EasyMapping.Generator/buildTransitive', 'tests/Diagnostics', 'tests/PackageSmoke')) {
+            dotnet format whitespace $path --folder --verify-no-changes
+            if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+          }
       - name: Verify generator diagnostics
         run: ./tools/Test-GeneratorDiagnostics.ps1
       - name: Verify generated evidence

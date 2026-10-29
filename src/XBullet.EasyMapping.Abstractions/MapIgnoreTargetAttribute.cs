@@ -12,5 +12,8 @@ public sealed class MapIgnoreTargetAttribute : Attribute
         Target = target;
     }
 
-    public string Target { get; }
+    public string Target
+    {
+        get;
+    }
 }

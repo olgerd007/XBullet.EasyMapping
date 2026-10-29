@@ -37,6 +37,7 @@ internal sealed class SourcePropertyPath
                 error = $"Source path '{path}' segment '{segment}' must name an existing public readable instance property; fields and indexers are unsupported";
                 return null;
             }
+
             if (matches.Length > 1)
             {
                 error = $"Source path '{path}' segment '{segment}' is ambiguous; property names must not differ only by case or come from competing interface declarations";
@@ -44,7 +45,11 @@ internal sealed class SourcePropertyPath
             }
 
             properties[index] = property;
-            if (index == segments.Length - 1) { continue; }
+            if (index == segments.Length - 1)
+            {
+                continue;
+            }
+
             var receiverType = SymbolNames.NonNullable(property.Type);
             var nextType = receiverType as INamedTypeSymbol ?? (receiverType is IArrayTypeSymbol ? receiverType.BaseType : null);
             if (nextType is null)
@@ -52,6 +57,7 @@ internal sealed class SourcePropertyPath
                 error = $"Source path '{path}' cannot traverse property '{segment}' of type '{SymbolNames.Type(property.Type)}'";
                 return null;
             }
+
             source = NestedProperties(nextType);
         }
 
@@ -62,7 +68,11 @@ internal sealed class SourcePropertyPath
     private static IPropertySymbol[] NestedProperties(INamedTypeSymbol type)
     {
         var properties = SymbolNames.Properties(type);
-        if (type.TypeKind != TypeKind.Interface) { return properties; }
+        if (type.TypeKind != TypeKind.Interface)
+        {
+            return properties;
+        }
+
         // Inherited interface members are not included in GetMembers or BaseType.
         var ownNames = new HashSet<string>(properties.Select(property => property.Name), StringComparer.Ordinal);
         var inherited = type.AllInterfaces.SelectMany(SymbolNames.Properties)
@@ -93,6 +103,7 @@ internal sealed class SourcePropertyPath
             var conditional = index > 0 && SymbolNames.IsNullable(_properties[index - 1].Type);
             expression.Append(conditional ? "?." : ".").Append(SymbolNames.Identifier(_properties[index].Name));
         }
+
         return expression.ToString();
     }
 }

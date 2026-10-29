@@ -74,8 +74,9 @@ the attributes assembly in that case.
   `MappingCoverage.Both` to require source coverage as well.
 - Names match exactly first, then without case to support constructor parameter
   conventions. Names differing only by case within one DTO are rejected.
-  `MapProperty` accepts direct or dot-separated source property paths; target
-  names and ignores use direct names. Nested target paths are unsupported.
+  `MapProperty` accepts direct or dot-separated source and target property paths.
+  `MapConstant`, `MapGeneratedValue`, and `MapIgnoreTarget` also accept target
+  paths. `MapIgnoreSource` names a direct source property.
 - A null root returns null when both source and result are nullable. A non-nullable
   result requires a source value; a null argument throws `ArgumentNullException`.
 - Nullable properties map to nullable targets. Nullable-to-non-nullable member
@@ -131,6 +132,65 @@ and unreadable properties are outside source coverage.
 The default remains `MappingCoverage.Target`; no migration is required for mappers
 that intentionally consume only a subset of their source. `MapIgnoreSource` can
 also document deliberate omissions in that mode.
+
+### Explicit values and nested coverage
+
+Constants and generated values satisfy target coverage without consuming a source
+property. Replacing a source value therefore needs `MapIgnoreSource` in `Both`
+mode, even when source and target have the same name:
+
+```csharp
+public sealed record OrderInput(int Id, string CustomerName, string InternalNote);
+public sealed record CustomerDto(string Name, string SourceSystem);
+public sealed record OrderDto(int Id, CustomerDto Customer);
+
+[Mapper(Coverage = MappingCoverage.Both)]
+public static partial class OrderMappings
+{
+    private static int CreateOrderId() => 7;
+
+    [MapGeneratedValue(nameof(OrderDto.Id), Use = nameof(CreateOrderId))]
+    [MapIgnoreSource(nameof(OrderInput.Id))]
+    [MapIgnoreSource(nameof(OrderInput.InternalNote))]
+    [MapProperty(nameof(OrderInput.CustomerName), "Customer.Name")]
+    [MapConstant("Customer.SourceSystem", "ORDERS")]
+    public static partial OrderDto Map(OrderInput source);
+}
+```
+
+Here `CustomerName` is consumed, `Id` and `InternalNote` are explicitly ignored,
+and all target members are supplied. The helper returns a fixed ID only to keep
+the example deterministic; use the application's ID policy in a real mapping.
+Removing the source `Id` ignore produces EMAP010. Adding an unmapped target
+property such as `Customer.Version` produces EMAP003 naming that full path.
+
+| Configuration | Source coverage | Target coverage |
+| --- | --- | --- |
+| Same-name assignment or selected constructor argument | Consumes its source property | Covers the assigned target |
+| `MapProperty("Customer.Name", "CustomerName")` | Consumes the root `Customer` | Covers `CustomerName` |
+| `MapProperty("CustomerName", "Customer.Name")` | Consumes `CustomerName` | Covers `Customer.Name`; other child members still need configuration |
+| `MapProperty(..., Use = nameof(ConvertName))` | Consumes the selected source root | Covers the selected target; helper internals are not inspected |
+| `MapConstant` / `MapGeneratedValue` | Consumes nothing | Covers the configured target |
+| `MapIgnoreSource("Name")` | Acknowledges an unused source root | Covers nothing |
+| `MapIgnoreTarget("Customer.Version")` | Consumes nothing | Acknowledges the omitted target leaf |
+
+Nested source paths account for their root rather than every descendant. Nested
+target paths explicitly construct or update the child, so **each public child
+property must be mapped, constructor-supplied, or ignored**. Child names do not
+implicitly match unrelated properties on the root source. Use a separate generated
+child mapping when convention-based matching within the child model is wanted;
+that method gets its own coverage check.
+
+Ignoring a whole target subtree, such as `Customer`, acknowledges that subtree.
+It cannot be combined with mappings or ignores below `Customer`. A whole-object
+assignment also cannot be combined with descendant configurations. Invalid paths
+and contradictory configurations produce EMAP006. Required-member and constructor
+rules still apply to ignored members.
+
+Coverage checks generated partial declarations only. A handwritten wrapper can
+call a generated mapping and then change its result; those manual assignments and
+the business meaning of helper bodies need runtime unit tests. Coverage here is
+compile-time member accounting, separate from test line or branch coverage.
 
 Matching additions to both DTOs can still map by convention without an explicit
 acknowledgment. Strict coverage ensures properties are accounted for, not that every
@@ -305,8 +365,8 @@ public static partial OrderDto Map(OrderInput source);
 
 Each path segment must name an exact public readable instance property, including
 inherited properties. Fields, indexers, and static or inaccessible properties are
-rejected with EMAP006 identifying the path and failing segment. Nested target
-paths are not supported. This example configures one member; the other target
+rejected with EMAP006 identifying the path and failing segment. This example
+configures one member; the other target
 members still need matching source properties, explicit mappings, or ignores.
 
 Conversions apply to the selected leaf property. The same enum type copies
@@ -322,6 +382,37 @@ Under `MappingCoverage.Both`, a nested source path accounts for its root propert
 The same root may supply several targets; it cannot also be ignored with
 `MapIgnoreSource`. Changing a source path is included in model-shape approval.
 
+### Nested target paths
+
+Target paths can build children from flattened inputs or reshape nested inputs:
+
+```csharp
+[MapProperty(nameof(OrderInput.CustomerName), "Customer.Name")]
+[MapConstant("Customer.SourceSystem", "ORDERS")]
+[MapIgnoreTarget("Customer.Version")]
+public static partial OrderDto Map(OrderInput source);
+```
+
+Sibling paths share one child object. Creation uses the same constructor,
+`init`, and required-member rules as root mappings, including immutable child
+records and constructor parameters. Paths may span several levels. Each configured
+child needs complete target coverage as described in
+[strict coverage](#explicit-values-and-nested-coverage).
+
+An existing-target update reuses existing child references, preserving ignored
+members. A null intermediate is constructed using the same configuration; ignored
+members then retain constructor or initializer defaults. Nullable and non-nullable
+struct intermediates are copied back after updating. Intermediates in an update
+require public getters and writable non-`init` setters, and the child must also be
+constructible for the null case. Read-only or `init` leaves require a creation
+mapping or a whole-object replacement instead of an in-place nested update.
+
+Intermediates must be concrete DTO classes or structs. Collection indexing,
+dictionary keys, scalar traversal, and automatic reference-cycle handling are
+unsupported. Whole-object assignments and descendant configurations conflict
+(EMAP006); unsupported or unwritable members produce EMAP009. Target path changes
+participate in model-shape approval.
+
 Declare each nested pair in the same mapper:
 
 ```csharp
@@ -335,16 +426,118 @@ signatures are preferred; competing candidates produce a diagnostic rather than
 depending on declaration order. Instance converters cannot serve a static mapping.
 Keep conversions pure and perform external I/O in application use cases.
 
+Use `MapProperty.Use` to bind a helper to one member instead of selecting it by
+type pair alone:
+
+```csharp
+[MapProperty(
+    nameof(OrderInput.Customer),
+    nameof(OrderDto.CustomerStatus),
+    Use = nameof(MapCustomerStatus))]
+public static partial OrderDto Map(OrderInput source);
+
+private static OrderStatus MapCustomerStatus(Customer? customer) =>
+    customer?.Status ?? OrderStatus.Pending;
+```
+
+The helper receives the selected source value, or the leaf value when a nested
+source path is used. Selecting the whole object lets the helper check runtime
+nulls before reading its members, including when a legacy source property lacks
+a nullable annotation. The helper is called for null values too; its parameter
+must accept null when the source path is nullable. Nullable helper results require
+nullable targets. Collection helpers receive the whole collection, not individual
+elements.
+
+`Use` must name a synchronous, non-generic, single-input method in the same mapper
+with no `ref`/`out` parameter, by-reference result, or `dynamic` parameter/result.
+Its parameter and return types
+must match the source and target types, allowing safe outer nullable lifting but
+not different nested generic nullability or implicit numeric/reference adapters.
+Instance helpers require an instance mapping. Generated partial mapping methods
+can also be selected, subject to the normal signature and cycle rules.
+
+An exact type-and-nullability overload is preferred; otherwise exactly one
+compatible overload must exist. Invalid names, incompatible signatures, and
+ambiguous overloads produce EMAP006 naming the helper, target, and mapping. There
+is no fallback to automatic conversion for an invalid explicit binding.
+
+Every helper name referenced by `Use`, including all overloads of that name, is
+excluded from automatic converter discovery throughout that mapper. Bind it
+explicitly on each member that needs it. Other automatic helpers and mappings
+without any `Use` configuration retain their existing behavior. The bound source
+still counts toward strict coverage, and helper-name changes participate in model
+approval; helper method bodies remain outside the model-shape snapshot.
+
 Generated mapping dependency cycles are rejected before runtime. Reference tracking,
 automatic graph truncation, and arbitrary cyclic graphs are not supported. Explicit
 handwritten graph mappings remain the consumer's responsibility.
+
+## Constant and generated values
+
+Use `MapConstant` when a target property or constructor parameter gets a fixed
+value instead of a source member. Use `MapGeneratedValue` for a parameterless
+helper evaluated when the mapper is called:
+
+```csharp
+[MapConstant(nameof(OrderEntity.CreatedBy), "SYSTEM")]
+[MapConstant(nameof(OrderEntity.Status), OrderStatus.Pending)]
+[MapGeneratedValue(nameof(OrderEntity.Id), Use = nameof(CreateOrderId))]
+public static partial OrderEntity ToEntity(OrderInput source);
+
+private static Guid CreateOrderId() => Guid.NewGuid();
+```
+
+Constants support C# attribute scalar values (strings, characters, booleans,
+integer and floating-point types, and enums), `typeof(...)`, and null for nullable
+targets. Non-null constants must have the same underlying type as the target;
+nullable lifting is allowed, but numeric widening, boxing, and implicit enum
+casts are not. Floating-point special values and signed zero are preserved.
+One-dimensional attribute arrays are also supported, with the same array type as
+the target and compatible element nullability:
+
+```csharp
+[MapConstant(nameof(OrderDto.Labels), new string[] { "new", "web" })]
+```
+
+Each configured target gets a fresh array on each mapping call, including updates;
+constructor and required-member initialization share that target's array. Explicit
+`object[]` values may contain boxed attribute-compatible elements. Scalar constants
+still require an exact type rather than implicit boxing. `decimal`, `Guid`,
+`DateTime`, and other values that cannot be supplied as C# attribute constants
+should come from a generated-value helper instead. Strings and characters are
+emitted as escaped C# literals.
+
+`MapGeneratedValue.Use` must name a synchronous, non-generic, parameterless method
+in the same mapper. Its return type must match the target type with safe
+nullability; `dynamic` and by-reference results are unsupported. Instance helpers
+require an instance mapper method. A provider runs at runtime, after root null
+guards and before target construction or update assignments, once per configured
+target on each call. If a required member is supplied through both a constructor
+and its initializer, they share one generated value. Different targets using the
+same helper still invoke it separately. Updates also regenerate configured values;
+only configure identifiers or audit fields there when replacement is intended.
+
+These configurations cover the target without consuming any source property.
+Under `Coverage.Both`, explicitly ignore any same-named source property that is
+being replaced. Keep source conversion on `MapProperty.Use`; generated-value
+helpers receive no source argument. Explicit constants and generated values bypass
+automatic source converters. Helper names referenced by `MapGeneratedValue.Use`
+are explicit-only throughout the mapper, like names referenced by `MapProperty.Use`.
+
+Each target may have only one `MapProperty`, `MapConstant`, or `MapGeneratedValue`
+configuration and cannot also be ignored. Targets may be direct property names,
+constructor-parameter names, or dot-separated nested target paths. Invalid values,
+names, helper signatures, and conflicting configurations produce EMAP006, while
+unwritable target members retain EMAP009. Constant values and provider names are
+included in model-shape approvals; helper bodies are not.
 
 ## Constructor and required-member rules
 
 Creation prefers public constructors that can map every non-ignored property
 without a public setter, including inherited properties. Among those constructors,
 a public parameterless constructor is preferred when available; otherwise exactly
-one constructor must qualify. Non-optional parameters must have source properties.
+one constructor must qualify. Non-optional parameters must have source properties
+or explicit `MapConstant`/`MapGeneratedValue` configurations.
 Missing optional arguments retain their declared defaults. Renames can address
 constructor parameter names; configuration for unselected parameters is rejected.
 

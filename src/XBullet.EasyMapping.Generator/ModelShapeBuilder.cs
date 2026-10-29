@@ -19,7 +19,10 @@ internal sealed class ModelShapeBuilder
         var attribute = mapper.GetAttributes().First(candidate =>
             candidate.AttributeClass?.ToDisplayString() == "XBullet.EasyMapping.MapperAttribute");
         if (methods.Length == 0 || !attribute.NamedArguments.Any(argument =>
-            argument.Key == "RequireModelApproval" && argument.Value.Value is true)) { return null; }
+            argument.Key == "RequireModelApproval" && argument.Value.Value is true))
+        {
+            return null;
+        }
 
         var builder = new ModelShapeBuilder(cancellationToken);
         var content = new StringBuilder("Mapper model approval v1\n");
@@ -33,12 +36,27 @@ internal sealed class ModelShapeBuilder
             content.Append("mapping ").Append(method.IsStatic ? "static " : "instance ")
                 .Append(SymbolNames.Type(method.ReturnType)).Append(' ').Append(method.Name).Append('(')
                 .Append(string.Join(", ", method.Parameters.Select(Parameter))).Append(")\n");
-            foreach (var configuration in Attributes(method)) { content.Append("  ").Append(configuration).Append('\n'); }
-            foreach (var parameter in method.Parameters) { builder.Visit(parameter.Type, forceModel: true); }
-            if (!method.ReturnsVoid) { builder.Visit(method.ReturnType, forceModel: true); }
+            foreach (var configuration in Attributes(method))
+            {
+                content.Append("  ").Append(configuration).Append('\n');
+            }
+
+            foreach (var parameter in method.Parameters)
+            {
+                builder.Visit(parameter.Type, forceModel: true);
+            }
+
+            if (!method.ReturnsVoid)
+            {
+                builder.Visit(method.ReturnType, forceModel: true);
+            }
         }
 
-        foreach (var model in builder._models.Values) { content.Append(model); }
+        foreach (var model in builder._models.Values)
+        {
+            content.Append(model);
+        }
+
         var diagnostic = new MappingDiagnostic(MappingDiagnostics.ModelApproval,
             mapper.Locations.First(location => location.IsInSource), "Model approval required");
         return new ModelApprovalSnapshot(mapper.ToDisplayString(), content.ToString(), diagnostic,
@@ -49,53 +67,95 @@ internal sealed class ModelShapeBuilder
     {
         _cancellationToken.ThrowIfCancellationRequested();
         type = SymbolNames.NonNullable(type);
-        if (type is IArrayTypeSymbol array) { Visit(array.ElementType); return; }
-        if (type is not INamedTypeSymbol named) { return; }
-        if (named.SpecialType != SpecialType.None) { return; }
-        if (!forceModel && IsPlatformType(named))
+        if (type is IArrayTypeSymbol array)
         {
-            foreach (var argument in named.TypeArguments) { Visit(argument); }
+            Visit(array.ElementType);
             return;
         }
-        if (_visited.Contains(type)) { return; }
+
+        if (type is not INamedTypeSymbol named)
+        {
+            return;
+        }
+
+        if (named.SpecialType != SpecialType.None)
+        {
+            return;
+        }
+
+        if (!forceModel && IsPlatformType(named))
+        {
+            foreach (var argument in named.TypeArguments)
+            {
+                Visit(argument);
+            }
+
+            return;
+        }
+
+        if (_visited.Contains(type))
+        {
+            return;
+        }
+
         // A legal Node<T> -> Node<Node<T>> property must not expand forever.
         if (!_activeDefinitions.Add(named.OriginalDefinition))
         {
-            foreach (var argument in named.TypeArguments) { Visit(argument); }
+            foreach (var argument in named.TypeArguments)
+            {
+                Visit(argument);
+            }
+
             return;
         }
+
         _visited.Add(type);
-        foreach (var argument in named.TypeArguments) { Visit(argument); }
+        foreach (var argument in named.TypeArguments)
+        {
+            Visit(argument);
+        }
 
         var definition = new StringBuilder("model ").Append(SymbolNames.Type(named)).Append(" kind=")
             .Append(named.TypeKind).Append(" record=").Append(named.IsRecord).Append(" readonly=").Append(named.IsReadOnly)
             .Append(" abstract=").Append(named.IsAbstract).Append(" sealed=").Append(named.IsSealed);
-        if (named.TypeArguments.Length > 0) { definition.Append(" arguments=").Append(NullabilityShape(named)); }
+        if (named.TypeArguments.Length > 0)
+        {
+            definition.Append(" arguments=").Append(NullabilityShape(named));
+        }
+
         definition.Append('\n');
         if (named.EnumUnderlyingType is { } underlyingType)
         {
             definition.Append("  underlying ").Append(SymbolNames.Type(underlyingType)).Append('\n');
         }
+
         if (named.BaseType is { } parent)
         {
             definition.Append("  base ").Append(SymbolNames.Type(parent)).Append('\n');
             Visit(parent);
         }
+
         foreach (var contract in named.Interfaces.OrderBy(SymbolNames.Type, StringComparer.Ordinal))
         {
             definition.Append("  interface ").Append(SymbolNames.Type(contract)).Append('\n');
         }
+
         AppendAttributes(definition, named, "  ");
         foreach (var property in SymbolNames.Properties(named))
         {
             definition.Append("  property ").Append(property.Name).Append(" : ").Append(SymbolNames.Type(property.Type))
                 .Append(" nullable=").Append(property.NullableAnnotation).Append(" get=").Append(Accessor(property.GetMethod))
                 .Append(" set=").Append(Accessor(property.SetMethod)).Append(" required=").Append(property.IsRequired);
-            if (property.IsIndexer) { definition.Append(" index=(").Append(string.Join(", ", property.Parameters.Select(Parameter))).Append(')'); }
+            if (property.IsIndexer)
+            {
+                definition.Append(" index=(").Append(string.Join(", ", property.Parameters.Select(Parameter))).Append(')');
+            }
+
             definition.Append('\n');
             AppendAttributes(definition, property, "    ");
             Visit(property.Type);
         }
+
         for (var current = named; current is not null; current = current.BaseType)
         {
             foreach (var field in current.GetMembers().OfType<IFieldSymbol>().Where(field =>
@@ -104,19 +164,28 @@ internal sealed class ModelShapeBuilder
             {
                 definition.Append("  field ").Append(field.Name).Append(" : ").Append(SymbolNames.Type(field.Type))
                     .Append(" readonly=").Append(field.IsReadOnly).Append(" static=").Append(field.IsStatic);
-                if (field.HasConstantValue) { definition.Append(" constant=").Append(Constant(field.ConstantValue)); }
+                if (field.HasConstantValue)
+                {
+                    definition.Append(" constant=").Append(Constant(field.ConstantValue));
+                }
+
                 definition.Append('\n');
                 AppendAttributes(definition, field, "    ");
                 Visit(field.Type);
             }
         }
+
         foreach (var constructor in named.InstanceConstructors.Where(constructor => constructor.DeclaredAccessibility == Accessibility.Public)
             .OrderBy(constructor => string.Join(", ", constructor.Parameters.Select(Parameter)), StringComparer.Ordinal))
         {
             definition.Append("  constructor (").Append(string.Join(", ", constructor.Parameters.Select(Parameter))).Append(")\n");
             AppendAttributes(definition, constructor, "    ");
-            foreach (var parameter in constructor.Parameters) { Visit(parameter.Type); }
+            foreach (var parameter in constructor.Parameters)
+            {
+                Visit(parameter.Type);
+            }
         }
+
         // Type display text does not distinguish oblivious string from non-nullable string.
         _models.Add(SymbolNames.Type(named) + "|" + NullabilityShape(named), definition.ToString());
         _activeDefinitions.Remove(named.OriginalDefinition);
@@ -125,7 +194,11 @@ internal sealed class ModelShapeBuilder
     private static bool IsPlatformType(INamedTypeSymbol type)
     {
         // Framework types are opaque leaves; locally declared DTOs are still inspected.
-        if (type.Locations.Any(location => location.IsInSource)) { return false; }
+        if (type.Locations.Any(location => location.IsInSource))
+        {
+            return false;
+        }
+
         var assembly = type.ContainingAssembly.Identity.Name;
         return assembly is "mscorlib" or "netstandard" or "System" || assembly.StartsWith("System.", StringComparison.Ordinal);
     }
@@ -147,7 +220,10 @@ internal sealed class ModelShapeBuilder
 
     private static void AppendAttributes(StringBuilder target, ISymbol symbol, string indent)
     {
-        foreach (var attribute in Attributes(symbol)) { target.Append(indent).Append(attribute).Append('\n'); }
+        foreach (var attribute in Attributes(symbol))
+        {
+            target.Append(indent).Append(attribute).Append('\n');
+        }
     }
 
     private static IEnumerable<string> Attributes(ISymbol symbol) => symbol.GetAttributes()

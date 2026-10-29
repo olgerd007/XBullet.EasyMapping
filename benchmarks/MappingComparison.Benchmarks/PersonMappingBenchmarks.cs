@@ -18,7 +18,10 @@ public class PersonMappingBenchmarks
     private AutoMapperMappings _nullableAutoMapper = null!;
 
     [ParamsAllValues]
-    public PersonScenario Scenario { get; set; }
+    public PersonScenario Scenario
+    {
+        get; set;
+    }
 
     [GlobalSetup]
     public void Setup()

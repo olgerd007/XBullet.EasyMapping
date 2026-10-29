@@ -1,5 +1,26 @@
 # Changelog
 
+## 1.3.0 — 2026-10-30
+
+- Select source converters explicitly with `MapProperty.Use`, including nullable
+  values, nested source paths, and whole collections. Invalid helper bindings
+  produce source-located configuration diagnostics.
+- Supply target properties and constructor parameters with `MapConstant` and
+  `MapGeneratedValue`. Generated-value helpers run once per configured target on
+  each call; required-member initialization reuses the same value. Array constants
+  create fresh arrays for each target and mapping call, including updates.
+- Support dot-separated target paths for nested creation and existing-target
+  updates, including nullable and struct intermediates. Validate conflicting,
+  ignored, missing, and unwritable target paths at compile time.
+- Include explicit helper names, constants, generated values, and nested target
+  configurations in model-shape approvals. Existing approvals using these new
+  configurations require review; builds never approve changes automatically.
+- Expand regression coverage to 474 generator tests and 94 comparison tests,
+  including runtime behavior, diagnostics, incremental updates, and approvals.
+- Standardize handwritten C# formatting and enforce braces, multiline blocks, and
+  blank-line separation in builds and CI, including standalone packaged helpers
+  and test fixtures. Embedded compiler inputs and generated fixtures are exempt.
+
 ## 1.2.0 — 2026-10-29
 
 - Support dot-separated source paths in `MapProperty` for flattening nested

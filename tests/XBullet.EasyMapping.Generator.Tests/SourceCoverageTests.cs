@@ -262,8 +262,15 @@ public sealed class SourceCoverageTests
                 .Replace("[MapIgnoreSource(\"Extra\")]", "", StringComparison.Ordinal),
             _ => source
         };
-        if (change == "source_added") { initial = initial.Replace("Input(int Id, string Extra)", "Input(int Id)", StringComparison.Ordinal); }
-        if (change == "target_removed") { initial = initial.Replace("Output(int Id)", "Output(int Id, string Extra)", StringComparison.Ordinal); }
+        if (change == "source_added")
+        {
+            initial = initial.Replace("Input(int Id, string Extra)", "Input(int Id)", StringComparison.Ordinal);
+        }
+
+        if (change == "target_removed")
+        {
+            initial = initial.Replace("Output(int Id)", "Output(int Id, string Extra)", StringComparison.Ordinal);
+        }
 
         var (driver, output) = GeneratorTestCompilation.Generate(initial);
         Assert.Empty(driver.GetRunResult().Diagnostics);

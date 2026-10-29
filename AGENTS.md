@@ -74,6 +74,38 @@ organize folders.
   Use constructor injection and layer-specific registration. Avoid static service
   locators, hidden dependencies, and interfaces added without a clear purpose.
 
+## C# Code Style
+
+Use [Microsoft's C# coding conventions](https://learn.microsoft.com/en-us/dotnet/csharp/fundamentals/coding-style/coding-conventions)
+as the baseline, with the following repository rules taking precedence:
+
+- Use four spaces for indentation; do not use tabs.
+- Use Allman braces: place opening and closing braces on separate lines, aligned
+  with the construct that owns the block.
+- Always use braces for control-flow bodies, even for a single statement.
+- Put each statement and declaration on its own line. Expand compact control-flow
+  blocks such as `if (condition) { DoWork(); }` across multiple lines.
+- Put a space after control-flow keywords, for example `if (condition)` and
+  `foreach (var item in items)`.
+- Separate logical steps with one blank line. After a control-flow block, add a
+  blank line before the next independent statement at the same scope level.
+- Keep related `else`, `catch`, and `finally` clauses on the next line after the
+  preceding closing brace, without an intervening blank line. Do not insert blank
+  lines between consecutive closing braces or between every statement.
+- Keep at least one blank line between method and property definitions.
+- Treat `.editorconfig` as the executable formatting configuration. The blank-line
+  rule uses Microsoft's experimental IDE2003 option; keep the written convention
+  even in tooling that does not support it.
+- Apply these conventions to new and modified code. Keep repository-wide
+  reformatting separate from functional changes unless explicitly requested.
+- Enforce IDE0011, IDE0055, and IDE2003 as warnings. Builds treat warnings as errors.
+  Verify the agreed rules with
+  `dotnet format --no-restore --verify-no-changes --severity info --diagnostics IDE0011 IDE0055 IDE2003`.
+- Also verify whitespace in the packaged build helper, standalone diagnostic
+  fixtures, and package smoke consumer; these are outside the solution.
+- Generated verification fixtures under `artifacts/`, build output, and embedded
+  compiler-test source strings are exempt from handwritten-code formatting rules.
+
 ## .NET Implementation Standards
 
 - Preserve the repository's target framework and conventions. Enable nullable
@@ -129,7 +161,10 @@ organize folders.
    dotnet restore
    dotnet build --no-restore --verbosity minimal
    dotnet test <test-project> --no-restore --verbosity minimal
-   dotnet format --no-restore --verify-no-changes
+   dotnet format --no-restore --verify-no-changes --severity info --diagnostics IDE0011 IDE0055 IDE2003
+   dotnet format whitespace src/XBullet.EasyMapping.Generator/buildTransitive --folder --verify-no-changes
+   dotnet format whitespace tests/Diagnostics --folder --verify-no-changes
+   dotnet format whitespace tests/PackageSmoke --folder --verify-no-changes
    ```
 
    Run tests for each relevant test project. Run formatting verification when

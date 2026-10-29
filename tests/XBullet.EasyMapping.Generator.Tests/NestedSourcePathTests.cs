@@ -287,7 +287,7 @@ public sealed class NestedSourcePathTests
     }
 
     [Fact]
-    public void Nested_target_paths_remain_unsupported()
+    public void Missing_sources_in_nested_target_paths_remain_diagnostic_errors()
     {
         var (driver, _) = GeneratorTestCompilation.Generate("""
             using XBullet.EasyMapping;
@@ -295,13 +295,13 @@ public sealed class NestedSourcePathTests
             public record Details(int Value);
             public record OrderDto(Details Details);
             [Mapper] public static partial class M {
-                [MapProperty(nameof(OrderInput.Value), "Details.Value")]
+                [MapProperty("Missing.Value", "Details.Value")]
                 public static partial OrderDto Map(OrderInput source);
             }
             """);
 
         Assert.Contains(driver.GetRunResult().Diagnostics, diagnostic => diagnostic.Id == "EMAP006" &&
-            diagnostic.GetMessage().Contains("direct target", StringComparison.Ordinal));
+            diagnostic.GetMessage().Contains("Missing", StringComparison.Ordinal));
     }
 
     [Fact]

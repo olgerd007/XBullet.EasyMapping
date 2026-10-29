@@ -19,7 +19,12 @@ public sealed class ConverterInvocationTests
         var isStaticMapper = mode == "static";
         var mapperModifier = isStaticMapper ? "static " : "";
         var converterModifier = mode == "instance" ? "" : "static ";
-        var sourceType = shape switch { "list" => "List<int?>", "enumerable" => "IEnumerable<int?>", _ => "int?" };
+        var sourceType = shape switch
+        {
+            "list" => "List<int?>",
+            "enumerable" => "IEnumerable<int?>",
+            _ => "int?"
+        };
         var targetType = shape == "scalar" ? "string" : "List<string>";
         var value = shape == "scalar" ? "(int?)null" : "new List<int?> { 7, null }";
         var receiver = isStaticMapper ? "M" : "new M()";

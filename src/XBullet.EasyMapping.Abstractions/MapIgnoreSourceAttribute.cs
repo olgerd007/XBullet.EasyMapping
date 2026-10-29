@@ -12,5 +12,8 @@ public sealed class MapIgnoreSourceAttribute : Attribute
         Source = source;
     }
 
-    public string Source { get; }
+    public string Source
+    {
+        get;
+    }
 }
