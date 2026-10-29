@@ -25,9 +25,9 @@
       },
       "xunit.runner.visualstudio": {
         "type": "Direct",
-        "requested": "[3.1.5, )",
-        "resolved": "3.1.5",
-        "contentHash": "tKi7dSTwP4m5m9eXPM2Ime4Kn7xNf4x4zT9sdLO/G4hZVnQCRiMTWoSZqI/pYTVeI27oPPqHBKYI/DjJ9GsYgA=="
+        "requested": "[4.0.1, )",
+        "resolved": "4.0.1",
+        "contentHash": "8CoAaZkniVekR1ycJyxn+hOz+6ZQCDPcoIsIs6ujd4WyFcBMlxGNU15Qb8Uxd4iO4UmOuETb0M6vzBbwX/mfLA=="
       },
       "BenchmarkDotNet.Annotations": {
         "type": "Transitive",
@@ -272,18 +272,18 @@
         "type": "Project",
         "dependencies": {
           "AutoMapper": "[16.2.0, )",
-          "MappingComparison.Contracts": "[1.1.1, )"
+          "MappingComparison.Contracts": "[1.1.2, )"
         }
       },
       "mappingcomparison.benchmarks": {
         "type": "Project",
         "dependencies": {
           "BenchmarkDotNet": "[0.15.8, )",
-          "MappingComparison.AutoMapper": "[1.1.1, )",
-          "MappingComparison.EasyMapping": "[1.1.1, )",
-          "MappingComparison.Facet": "[1.1.1, )",
-          "MappingComparison.Manual": "[1.1.1, )",
-          "MappingComparison.Mapperly": "[1.1.1, )"
+          "MappingComparison.AutoMapper": "[1.1.2, )",
+          "MappingComparison.EasyMapping": "[1.1.2, )",
+          "MappingComparison.Facet": "[1.1.2, )",
+          "MappingComparison.Manual": "[1.1.2, )",
+          "MappingComparison.Mapperly": "[1.1.2, )"
         }
       },
       "mappingcomparison.contracts": {
@@ -292,27 +292,27 @@
       "mappingcomparison.easymapping": {
         "type": "Project",
         "dependencies": {
-          "MappingComparison.Contracts": "[1.1.1, )",
-          "XBullet.EasyMapping.Abstractions": "[1.1.1, )"
+          "MappingComparison.Contracts": "[1.1.2, )",
+          "XBullet.EasyMapping.Abstractions": "[1.1.2, )"
         }
       },
       "mappingcomparison.facet": {
         "type": "Project",
         "dependencies": {
           "Facet": "[6.6.15, )",
-          "MappingComparison.Contracts": "[1.1.1, )"
+          "MappingComparison.Contracts": "[1.1.2, )"
         }
       },
       "mappingcomparison.manual": {
         "type": "Project",
         "dependencies": {
-          "MappingComparison.Contracts": "[1.1.1, )"
+          "MappingComparison.Contracts": "[1.1.2, )"
         }
       },
       "mappingcomparison.mapperly": {
         "type": "Project",
         "dependencies": {
-          "MappingComparison.Contracts": "[1.1.1, )"
+          "MappingComparison.Contracts": "[1.1.2, )"
         }
       },
       "xbullet.easymapping.abstractions": {
