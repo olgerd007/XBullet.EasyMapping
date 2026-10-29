@@ -11,6 +11,8 @@ Version **1.1.0** is the first published release of the owned generator.
 Version **1.1.1** adds collection-mapping performance improvements and CI maintenance.
 Version **1.1.2** fixes converter shadowing, file-local
 diagnostics, enum approvals, and installation documentation.
+Version **1.2.0** is in preparation and adds nested source paths, constructor
+selection improvements, and navigable mapping diagnostics.
 See the [release guide](docs/release.md),
 [release notes](CHANGELOG.md), and [MIT license](LICENSE).
 
@@ -43,6 +45,10 @@ for automatic baseline discovery and the received-file workflow. Approval is opt
 
 Requires the .NET 10 SDK and PowerShell 7 for the evidence scripts.
 
+The repository's `NuGet.Config` uses nuget.org as its single package source,
+avoiding `NU1507` when Visual Studio adds machine-level feeds. Package smoke tests
+select their locally packed feed explicitly with `--source`.
+
 ```powershell
 dotnet restore XBullet.EasyMapping.slnx --locked-mode
 dotnet build XBullet.EasyMapping.slnx --no-restore --configuration Release --verbosity minimal -m:1
@@ -53,7 +59,7 @@ dotnet format XBullet.EasyMapping.slnx --no-restore --verify-no-changes
 
 The 94 comparison and performance-harness tests cover handwritten mapping,
 AutoMapper 16.2.0, Mapperly 4.3.1, Facet 6.6.15, and our own generator.
-The 186 compiler, generator, and attribute-contract tests cover
+The 232 compiler, generator, and attribute-contract tests cover
 generated execution, strict coverage, model approval, diagnostics, and incremental
 invalidation. A compiled order/customer/line-item graph exercises nested copies,
 nullable and jagged collections, required/init members, custom converters, and
@@ -128,12 +134,12 @@ dependencies are centralized and solution project resolutions are recorded in lo
 files. Sample projects are non-packable.
 
 Run `./tools/Test-Package.ps1` to build both NuGet packages into
-`artifacts/packages/1.1.2`, verify their metadata/license/assets, and execute an
+`artifacts/packages/1.2.0`, verify their metadata/license/assets, and execute an
 isolated consumer using that local feed. The version comes from
 `Directory.Build.props`; the smoke consumer uses the same version through central
 package management. Each run uses a fresh cache.
 
-CI is configured to verify Release builds, all 280 tests, formatting, documentation links,
+CI is configured to verify Release builds, all 326 tests, formatting, documentation links,
 diagnostics, model approvals, generated evidence, and packaged consumption on
 Windows and Ubuntu. Test results are retained even on failure; a successful
 Windows job also retains the verified packages. Both jobs must pass before

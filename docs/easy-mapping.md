@@ -73,8 +73,9 @@ the attributes assembly in that case.
   may remain unused with the default `MappingCoverage.Target`. Opt into
   `MappingCoverage.Both` to require source coverage as well.
 - Names match exactly first, then without case to support constructor parameter
-  conventions. Names differing only by case within one DTO are rejected. Renames
-  and ignores use direct names; nested member paths are not supported yet.
+  conventions. Names differing only by case within one DTO are rejected.
+  `MapProperty` accepts direct or dot-separated source property paths; target
+  names and ignores use direct names. Nested target paths are unsupported.
 - A null root returns null when both source and result are nullable. A non-nullable
   result requires a source value; a null argument throws `ArgumentNullException`.
 - Nullable properties map to nullable targets. Nullable-to-non-nullable member
@@ -292,6 +293,35 @@ that integration still requires explicit `AdditionalFiles` entries.
 
 ## Nested DTOs and custom conversions
 
+Use a source path to flatten a nested property into a target property or
+constructor argument:
+
+```csharp
+[MapProperty(
+    nameof(OrderInput.Customer) + "." + nameof(Customer.Status),
+    nameof(OrderDto.CustomerOrderStatus))]
+public static partial OrderDto Map(OrderInput source);
+```
+
+Each path segment must name an exact public readable instance property, including
+inherited properties. Fields, indexers, and static or inaccessible properties are
+rejected with EMAP006 identifying the path and failing segment. Nested target
+paths are not supported. This example configures one member; the other target
+members still need matching source properties, explicit mappings, or ignores.
+
+Conversions apply to the selected leaf property. The same enum type copies
+directly; different enum types and enum-to-number conversions require an explicit
+converter. Nullable intermediate references and structs propagate null through
+the path, making its result nullable even when the leaf is non-nullable. A
+non-nullable target therefore requires a handwritten converter for the nullable
+leaf type. Getters are evaluated once per path access; separate target mappings
+evaluate their paths independently.
+
+Under `MappingCoverage.Both`, a nested source path accounts for its root property
+(for example, `Customer`), without requiring coverage of every member inside it.
+The same root may supply several targets; it cannot also be ignored with
+`MapIgnoreSource`. Changing a source path is included in model-shape approval.
+
 Declare each nested pair in the same mapper:
 
 ```csharp
@@ -311,8 +341,10 @@ handwritten graph mappings remain the consumer's responsibility.
 
 ## Constructor and required-member rules
 
-Creation prefers a public parameterless constructor. Otherwise it requires exactly
-one public constructor whose non-optional parameters have source properties.
+Creation prefers public constructors that can map every non-ignored property
+without a public setter, including inherited properties. Among those constructors,
+a public parameterless constructor is preferred when available; otherwise exactly
+one constructor must qualify. Non-optional parameters must have source properties.
 Missing optional arguments retain their declared defaults. Renames can address
 constructor parameter names; configuration for unselected parameters is rejected.
 
@@ -359,6 +391,13 @@ All mapping diagnostics are errors and identify the declaration to fix:
 
 No partial mapper implementation is emitted when its mapping plan has errors. The
 compiler may additionally report that the declared partial methods lack implementations.
+Fix the accompanying `EMAP` diagnostic first: it points to the mapper or mapping
+method in the source file. Missing-source errors name the target property and
+suggest `MapProperty` or `MapIgnoreTarget`; conversion errors name the mapping,
+member, source/target types, and the reason the conversion is unsupported. If only
+CS8795 is reported, check that the generator is loaded, that the `[Mapper]`
+attribute is recognized, and that no generator-loading or execution warnings are
+being filtered out.
 For approval-only errors the mapping and review candidate are emitted, but EMAP011
 still prevents the compiler from producing a successful build.
 

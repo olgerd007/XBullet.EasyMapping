@@ -178,7 +178,7 @@ internal sealed class ConversionBuilder
 
     private string Fail(ITypeSymbol source, ITypeSymbol target, string member, string reason)
     {
-        _report(MappingDiagnostics.Conversion, [member, SymbolNames.Type(source), SymbolNames.Type(target), reason]);
+        _report(MappingDiagnostics.Conversion, [member, SymbolNames.Type(source), SymbolNames.Type(target), reason, _method.Name]);
         return "default!";
     }
 
