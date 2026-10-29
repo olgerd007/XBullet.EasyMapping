@@ -14,6 +14,58 @@ public sealed class ModelApprovalTests
         """;
     private const string Models = "public record Input(int Id); public record Output(int Id);";
 
+    [Theory]
+    [InlineData("int", "long")]
+    [InlineData("int", "uint")]
+    [InlineData("byte", "sbyte")]
+    [InlineData("short", "ushort")]
+    [InlineData("long", "ulong")]
+    public void Enum_underlying_type_changes_in_nested_models_require_approval(string before, string after)
+    {
+        var source = Mapper + $$"""
+            public enum Status : {{before}} { Ready = 1 }
+            public readonly record struct Envelope(Status Status);
+            public record Input(Envelope Value);
+            public record Output(Envelope Value);
+            """;
+        var baseline = Approval(source);
+        var (driver, compilation) = GeneratorTestCompilation.Generate(
+            source.Replace("Status : " + before, "Status : " + after, StringComparison.Ordinal), baseline);
+
+        var error = Assert.Single(driver.GetRunResult().Diagnostics);
+        Assert.Equal("EMAP011", error.Id);
+        Assert.Contains("has changed", error.GetMessage());
+        Assert.Contains("  underlying " + before + "\n", baseline.GetText()!.ToString());
+        Assert.Contains("  underlying " + after + "\n", Candidate(driver));
+        Assert.Empty(compilation.GetDiagnostics().Where(diagnostic => diagnostic.Severity >= DiagnosticSeverity.Warning));
+    }
+
+    [Theory]
+    [InlineData("byte")]
+    [InlineData("sbyte")]
+    [InlineData("short")]
+    [InlineData("ushort")]
+    [InlineData("int")]
+    [InlineData("uint")]
+    [InlineData("long")]
+    [InlineData("ulong")]
+    public void Legacy_enum_approvals_require_one_review_before_the_new_shape_is_accepted(string underlyingType)
+    {
+        var source = Mapper + $"public enum Status : {underlyingType} {{ Ready = 1 }} public record Input(Status Id); public record Output(Status Id);";
+        var current = Approval(source);
+        var underlyingLine = "  underlying " + underlyingType + "\n";
+        Assert.Contains(underlyingLine, current.GetText()!.ToString());
+        var legacy = new MemoryApproval(current.Path, current.GetText()!.ToString().Replace(underlyingLine, "", StringComparison.Ordinal));
+
+        var (driver, _) = GeneratorTestCompilation.Generate(source, legacy);
+
+        Assert.Equal("EMAP011", Assert.Single(driver.GetRunResult().Diagnostics).Id);
+        Assert.Equal(current.GetText()!.ToString(), Candidate(driver));
+        var (approvedDriver, compilation) = GeneratorTestCompilation.Generate(source, current);
+        Assert.Empty(approvedDriver.GetRunResult().Diagnostics);
+        Assert.Empty(compilation.GetDiagnostics().Where(diagnostic => diagnostic.Severity >= DiagnosticSeverity.Warning));
+    }
+
     [Fact]
     public void Missing_approval_fails_the_build_but_emits_a_reviewable_candidate()
     {

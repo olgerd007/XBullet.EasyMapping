@@ -72,6 +72,10 @@ internal sealed class ModelShapeBuilder
             .Append(" abstract=").Append(named.IsAbstract).Append(" sealed=").Append(named.IsSealed);
         if (named.TypeArguments.Length > 0) { definition.Append(" arguments=").Append(NullabilityShape(named)); }
         definition.Append('\n');
+        if (named.EnumUnderlyingType is { } underlyingType)
+        {
+            definition.Append("  underlying ").Append(SymbolNames.Type(underlyingType)).Append('\n');
+        }
         if (named.BaseType is { } parent)
         {
             definition.Append("  base ").Append(SymbolNames.Type(parent)).Append('\n');

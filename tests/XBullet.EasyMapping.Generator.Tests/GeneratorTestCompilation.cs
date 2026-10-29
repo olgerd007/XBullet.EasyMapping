@@ -14,11 +14,14 @@ internal static class GeneratorTestCompilation
         .Append(typeof(MapperAttribute).Assembly.Location).Distinct(StringComparer.OrdinalIgnoreCase)
         .Select(path => (MetadataReference)MetadataReference.CreateFromFile(path)).ToImmutableArray();
 
-    public static (GeneratorDriver Driver, Compilation Output) Generate(string source, params AdditionalText[] additionalTexts)
+    public static (GeneratorDriver Driver, Compilation Output) Generate(string source, params AdditionalText[] additionalTexts) =>
+        Generate(source, OutputKind.DynamicallyLinkedLibrary, additionalTexts);
+
+    public static (GeneratorDriver Driver, Compilation Output) Generate(string source, OutputKind outputKind, params AdditionalText[] additionalTexts)
     {
         var compilation = CSharpCompilation.Create("MapperTest_" + Guid.NewGuid().ToString("N"),
             [CSharpSyntaxTree.ParseText(source, ParseOptions, path: "TestInput.cs")], References,
-            new CSharpCompilationOptions(OutputKind.DynamicallyLinkedLibrary, nullableContextOptions: NullableContextOptions.Enable));
+            new CSharpCompilationOptions(outputKind, nullableContextOptions: NullableContextOptions.Enable));
         GeneratorDriver driver = CSharpGeneratorDriver.Create([new MappingGenerator().AsSourceGenerator()],
             additionalTexts: additionalTexts, parseOptions: ParseOptions,
             driverOptions: new GeneratorDriverOptions(IncrementalGeneratorOutputKind.None, trackIncrementalGeneratorSteps: true));

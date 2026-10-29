@@ -170,8 +170,10 @@ internal sealed class ConversionBuilder
             return "default!";
         }
 
-        Dependencies.Add(candidates[0]);
-        return SymbolNames.Identifier(candidates[0].Name) + "(" + expression + ")";
+        var candidate = candidates[0];
+        Dependencies.Add(candidate);
+        var receiver = candidate.IsStatic ? SymbolNames.Type(candidate.ContainingType) : "this";
+        return receiver + "." + SymbolNames.Identifier(candidate.Name) + "(" + expression + ")";
     }
 
     private string Fail(ITypeSymbol source, ITypeSymbol target, string member, string reason)
