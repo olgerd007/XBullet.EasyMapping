@@ -9,16 +9,18 @@ internal sealed class ConversionBuilder
     private readonly CSharpCompilation _compilation;
     private readonly IMethodSymbol _method;
     private readonly IMethodSymbol[] _candidates;
+    private readonly HashSet<string> _explicitHelpers;
     private readonly Action<DiagnosticDescriptor, string[]> _report;
     private readonly HashSet<string> _names;
     private int _counter;
 
-    public ConversionBuilder(Compilation compilation, IMethodSymbol method, IMethodSymbol[] candidates,
+    public ConversionBuilder(Compilation compilation, IMethodSymbol method, IMethodSymbol[] candidates, HashSet<string> explicitHelpers,
         Action<DiagnosticDescriptor, string[]> report)
     {
         _compilation = (CSharpCompilation)compilation;
         _method = method;
         _candidates = candidates;
+        _explicitHelpers = explicitHelpers;
         _report = report;
         _names = new HashSet<string>(method.Parameters.Select(parameter => parameter.Name), StringComparer.Ordinal);
         _names.UnionWith(method.ContainingType.GetMembers().Select(member => member.Name));
@@ -35,8 +37,9 @@ internal sealed class ConversionBuilder
         return name;
     }
 
-    public string Convert(ITypeSymbol source, ITypeSymbol target, string expression, string member)
+    public string Convert(ITypeSymbol source, ITypeSymbol target, string expression, string member, string? use = null)
     {
+        if (use is not null) { return ConvertUsingHelper(source, target, expression, member, use); }
         var exactCandidates = FindCandidates(source, target, exact: true)
             .Where(candidate => !candidate.IsPartialDefinition || candidate.PartialImplementationPart is not null ||
                 !SymbolNames.IsNullable(source) || SymbolNames.IsNullable(target)).ToArray();
@@ -150,17 +153,65 @@ internal sealed class ConversionBuilder
         return false;
     }
 
-    private IEnumerable<IMethodSymbol> FindCandidates(ITypeSymbol source, ITypeSymbol target, bool exact) =>
-        _candidates.Where(candidate => candidate.Parameters.Length == 1 && !candidate.ReturnsVoid &&
+    private bool HasConverterSignature(IMethodSymbol candidate) => candidate.Parameters.Length == 1 && !candidate.ReturnsVoid &&
             candidate.TypeParameters.Length == 0 && !candidate.IsAsync &&
             candidate.Parameters[0].RefKind == RefKind.None && candidate.RefKind == RefKind.None &&
-            (!_method.IsStatic || candidate.IsStatic) &&
+            (!_method.IsStatic || candidate.IsStatic);
+
+    private IEnumerable<IMethodSymbol> FindCandidates(ITypeSymbol source, ITypeSymbol target, bool exact) =>
+        _candidates.Where(candidate => !_explicitHelpers.Contains(candidate.Name) && HasConverterSignature(candidate) &&
             (exact
                 ? SymbolEqualityComparer.IncludeNullability.Equals(source, candidate.Parameters[0].Type) &&
                   SymbolEqualityComparer.IncludeNullability.Equals(target, candidate.ReturnType)
                 : SymbolEqualityComparer.Default.Equals(source, SymbolNames.NonNullable(candidate.Parameters[0].Type)) &&
                   SymbolEqualityComparer.Default.Equals(target, SymbolNames.NonNullable(candidate.ReturnType)) &&
                   !SymbolNames.IsNullable(candidate.ReturnType)));
+
+    private string ConvertUsingHelper(ITypeSymbol source, ITypeSymbol target, string expression, string member, string use)
+    {
+        var compatible = _candidates.Where(candidate => candidate.Name == use && HasConverterSignature(candidate) &&
+            candidate.Parameters[0].Type.TypeKind != TypeKind.Dynamic && candidate.ReturnType.TypeKind != TypeKind.Dynamic &&
+            CanPass(source, candidate.Parameters[0].Type) && CanPass(candidate.ReturnType, target)).ToArray();
+        var exact = compatible.Where(candidate =>
+            SymbolEqualityComparer.IncludeNullability.Equals(source, candidate.Parameters[0].Type) &&
+            SymbolEqualityComparer.IncludeNullability.Equals(target, candidate.ReturnType)).ToArray();
+        var candidates = exact.Length > 0 ? exact : compatible;
+        if (candidates.Length != 1)
+        {
+            var reason = candidates.Length == 0
+                ? $"has no compatible synchronous, non-generic, single-input method from '{SymbolNames.Type(source)}' to '{SymbolNames.Type(target)}' with statically typed parameters/results, safe nullability, and static/instance access"
+                : $"is ambiguous from '{SymbolNames.Type(source)}' to '{SymbolNames.Type(target)}'; use a unique helper name or an exact signature";
+            _report(MappingDiagnostics.Configuration,
+                [$"MapProperty.Use helper '{use}' for target '{member}' in mapping '{_method.Name}' {reason}"]);
+            return "default!";
+        }
+
+        // Pin the selected overload: another overload may accept a numeric or reference
+        // conversion that is outside the supported helper type pair.
+        var argument = "(" + SymbolNames.Type(candidates[0].Parameters[0].Type) + ")(" + expression + ")";
+        return Call(candidates, source, target, argument);
+    }
+
+    private static bool CanPass(ITypeSymbol source, ITypeSymbol target) =>
+        SymbolEqualityComparer.IncludeNullability.Equals(SymbolNames.NonNullable(source), SymbolNames.NonNullable(target)) &&
+        (!SymbolNames.IsNullable(source) || SymbolNames.IsNullable(target));
+
+    public string GenerateValue(ITypeSymbol target, string member, string use)
+    {
+        var compatible = _candidates.Where(candidate => candidate.Name == use && candidate.Parameters.Length == 0 &&
+            !candidate.ReturnsVoid && candidate.TypeParameters.Length == 0 && !candidate.IsAsync &&
+            candidate.RefKind == RefKind.None && candidate.ReturnType.TypeKind != TypeKind.Dynamic &&
+            (!_method.IsStatic || candidate.IsStatic) && CanPass(candidate.ReturnType, target)).ToArray();
+        var exact = compatible.Where(candidate => SymbolEqualityComparer.IncludeNullability.Equals(target, candidate.ReturnType)).ToArray();
+        var candidates = exact.Length > 0 ? exact : compatible;
+        if (candidates.Length != 1)
+        {
+            _report(MappingDiagnostics.Configuration,
+                [$"MapGeneratedValue.Use helper '{use}' for target '{member}' in mapping '{_method.Name}' requires one compatible synchronous, non-generic, parameterless method returning '{SymbolNames.Type(target)}' with safe nullability and static/instance access"]);
+            return "default!";
+        }
+        return Call(candidates[0], "");
+    }
 
     private string Call(IMethodSymbol[] candidates, ITypeSymbol source, ITypeSymbol target, string expression)
     {
@@ -170,7 +221,11 @@ internal sealed class ConversionBuilder
             return "default!";
         }
 
-        var candidate = candidates[0];
+        return Call(candidates[0], expression);
+    }
+
+    private string Call(IMethodSymbol candidate, string expression)
+    {
         Dependencies.Add(candidate);
         var receiver = candidate.IsStatic ? SymbolNames.Type(candidate.ContainingType) : "this";
         return receiver + "." + SymbolNames.Identifier(candidate.Name) + "(" + expression + ")";

@@ -29,6 +29,9 @@ public sealed class AttributeContractTests
 
         Assert.Equal("Input", property.Source);
         Assert.Equal("Output", property.Target);
+        Assert.Null(property.Use);
+        property.Use = "MapCustomerStatus";
+        Assert.Equal("MapCustomerStatus", property.Use);
         Assert.Equal("UnusedInput", new MapIgnoreSourceAttribute("UnusedInput").Source);
         Assert.Equal("UnusedOutput", new MapIgnoreTargetAttribute("UnusedOutput").Target);
     }
@@ -36,6 +39,8 @@ public sealed class AttributeContractTests
     [Theory]
     [InlineData(typeof(MapperAttribute), AttributeTargets.Class, false)]
     [InlineData(typeof(MapPropertyAttribute), AttributeTargets.Method, true)]
+    [InlineData(typeof(MapConstantAttribute), AttributeTargets.Method, true)]
+    [InlineData(typeof(MapGeneratedValueAttribute), AttributeTargets.Method, true)]
     [InlineData(typeof(MapIgnoreSourceAttribute), AttributeTargets.Method, true)]
     [InlineData(typeof(MapIgnoreTargetAttribute), AttributeTargets.Method, true)]
     public void Mapping_metadata_is_compile_time_only_unless_explicitly_preserved(
@@ -49,5 +54,20 @@ public sealed class AttributeContractTests
         Assert.False(usage.Inherited);
         Assert.Equal("MAPPER_PRESERVE_ATTRIBUTES",
             attributeType.GetCustomAttribute<ConditionalAttribute>()?.ConditionString);
+    }
+
+    [Fact]
+    public void Value_attributes_preserve_the_target_constant_and_helper_name()
+    {
+        var constant = new MapConstantAttribute("SourceSystem", "orders");
+        Assert.Equal("SourceSystem", constant.Target);
+        Assert.Equal("orders", constant.Value);
+        Assert.Null(new MapConstantAttribute("CustomerName", null).Value);
+
+        var generated = new MapGeneratedValueAttribute("Id");
+        Assert.Equal("Id", generated.Target);
+        Assert.Null(generated.Use);
+        generated.Use = "CreateOrderId";
+        Assert.Equal("CreateOrderId", generated.Use);
     }
 }

@@ -35,8 +35,14 @@ public static partial class PersonMappings
 Declared nested methods, handwritten converters, immutable DTO construction, and
 existing-target updates are supported. Null collections remain null; collection
 containers are copied. Missing target mappings and unsafe conversions are errors.
-`MappingCoverage.Both` also rejects unused source properties unless explicitly
-ignored. The default remains `MappingCoverage.Target` for existing mappers.
+`MapProperty.Use` explicitly selects a source converter; `MapConstant` and
+`MapGeneratedValue` supply [fixed or generated target values](docs/easy-mapping.md#constant-and-generated-values).
+Dot-separated target paths build or update nested children, and array constants
+produce fresh arrays for each target and call.
+[`MappingCoverage.Both`](docs/easy-mapping.md#strict-coverage-of-both-models) also
+rejects unused source properties unless explicitly ignored. Constants and
+generated values cover targets without consuming sources; nested target members
+must each be accounted for. The default remains `MappingCoverage.Target` for existing mappers.
 `RequireModelApproval` additionally blocks structural model changes until the
 readable approval files are explicitly updated. See the [approval workflow](docs/easy-mapping.md#model-shape-approval)
 for automatic baseline discovery and the received-file workflow. Approval is opt-in.
@@ -59,9 +65,11 @@ dotnet format XBullet.EasyMapping.slnx --no-restore --verify-no-changes
 
 The 94 comparison and performance-harness tests cover handwritten mapping,
 AutoMapper 16.2.0, Mapperly 4.3.1, Facet 6.6.15, and our own generator.
-The 232 compiler, generator, and attribute-contract tests cover
+The compiler, generator, and attribute-contract tests cover
 generated execution, strict coverage, model approval, diagnostics, and incremental
-invalidation. A compiled order/customer/line-item graph exercises nested copies,
+invalidation. See the [generator coverage audit](docs/generator-test-coverage.md)
+for the branch measurement, reproduction command, and residual compiler guards.
+A compiled order/customer/line-item graph exercises nested copies,
 nullable and jagged collections, required/init members, custom converters, and
 replacement-style updates with typed xUnit assertions. AutoMapper also runs with
 `AllowNullCollections`, and Mapperly with `UseDeepCloning`, so defaults and

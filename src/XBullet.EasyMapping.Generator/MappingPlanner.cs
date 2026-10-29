@@ -37,11 +37,16 @@ internal sealed class MappingPlanner
             .Where(method => method.MethodKind == MethodKind.Ordinary).ToArray();
         var generated = methods.Where(method => method.IsPartialDefinition && method.PartialImplementationPart is null)
             .OrderBy(method => method.ToDisplayString(), StringComparer.Ordinal).ToArray();
+        var explicitHelpers = new HashSet<string>(generated.SelectMany(method => method.GetAttributes())
+            .Where(attribute => attribute.AttributeClass?.ToDisplayString() is
+                "XBullet.EasyMapping.MapPropertyAttribute" or "XBullet.EasyMapping.MapGeneratedValueAttribute")
+            .SelectMany(attribute => attribute.NamedArguments).Where(argument => argument.Key == "Use")
+            .Select(argument => argument.Value.Value).OfType<string>(), StringComparer.Ordinal);
         var bodies = new List<string>();
         foreach (var method in generated)
         {
             _cancellationToken.ThrowIfCancellationRequested();
-            var body = BuildMethod(method, methods, requireSourceCoverage);
+            var body = BuildMethod(method, methods, requireSourceCoverage, explicitHelpers);
             if (body is not null) { bodies.Add(body); }
         }
 
@@ -106,7 +111,7 @@ internal sealed class MappingPlanner
         return false;
     }
 
-    private string? BuildMethod(IMethodSymbol method, IMethodSymbol[] methods, bool requireSourceCoverage)
+    private string? BuildMethod(IMethodSymbol method, IMethodSymbol[] methods, bool requireSourceCoverage, HashSet<string> explicitHelpers)
     {
         if (method.TypeParameters.Length != 0 || method.IsAbstract || method.IsVirtual || method.IsOverride ||
             method.IsAsync || method.IsExtensionMethod || method.RefKind != RefKind.None ||
@@ -156,12 +161,16 @@ internal sealed class MappingPlanner
         {
             Report(MappingDiagnostics.Configuration, method, "DTO property names must be unique when compared without case");
         }
-        var renames = new Dictionary<string, SourcePropertyPath>(StringComparer.OrdinalIgnoreCase);
+        var renames = new Dictionary<string, PropertyMapping>(StringComparer.OrdinalIgnoreCase);
         var ignores = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
         ReadConfiguration(method, sourceProperties, targetType, targetProperties, renames, ignores);
+        var targetScope = TargetMappingScope.Create(renames, ignores,
+            (descriptor, arguments) => Report(descriptor, method, arguments), _cancellationToken);
+        renames = targetScope.Mappings;
+        ignores = targetScope.Ignored;
         var sourceCoverage = new SourceCoverageValidator(sourceProperties.Select(property => property.Name).ToArray(),
             method, requireSourceCoverage, (descriptor, arguments) => Report(descriptor, method, arguments));
-        var conversion = new ConversionBuilder(_compilation, method, methods,
+        var conversion = new ConversionBuilder(_compilation, method, methods, explicitHelpers,
             (descriptor, arguments) => Report(descriptor, method, arguments));
         _dependencies.Add(method, conversion.Dependencies);
         var sourceName = SymbolNames.Identifier(method.Parameters[0].Name);
@@ -194,12 +203,15 @@ internal sealed class MappingPlanner
             sourceName = local;
         }
 
+        var values = new MappingValueBuilder(_compilation, conversion, sourceCoverage, sourceName, method.Name,
+            (descriptor, arguments) => Report(descriptor, method, arguments));
+        var mappingBody = new StringBuilder();
         if (method.ReturnsVoid)
         {
             var targetName = SymbolNames.Identifier(method.Parameters[1].Name);
             Guard(body, targetName, method.Parameters[1].Name);
-            BuildProperties(body, method, sourceProperties, targetProperties, renames, ignores, conversion, sourceName,
-                targetName, new HashSet<string>(StringComparer.OrdinalIgnoreCase), constructorSetsRequired: false, sourceCoverage);
+            BuildProperties(mappingBody, method, sourceProperties, targetProperties, renames, ignores, values,
+                targetName, new HashSet<string>(StringComparer.OrdinalIgnoreCase), constructorSetsRequired: false);
         }
         else
         {
@@ -215,42 +227,40 @@ internal sealed class MappingPlanner
             var consumed = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
             foreach (var parameter in constructor.Parameters)
             {
-                var property = FindSource(parameter.Name, sourceProperties, renames);
-                if (property is null || ignores.Contains(parameter.Name)) { continue; }
+                var mapping = FindSourceMapping(parameter.Name, sourceProperties, renames);
+                if (mapping is null || ignores.Contains(parameter.Name)) { continue; }
                 consumed.Add(parameter.Name);
-                sourceCoverage.RecordMapped(property.RootName);
-                arguments.Add(SymbolNames.Identifier(parameter.Name) + ": " + conversion.Convert(property.GetResultType(_compilation),
-                    parameter.Type, property.Access(sourceName), parameter.Name));
+                arguments.Add(SymbolNames.Identifier(parameter.Name) + ": " + BuildValue(mapping, parameter.Type, parameter.Name, method, values));
             }
 
-            body.Append("return new ").Append(SymbolNames.Type(targetType)).AppendLine("(")
+            mappingBody.Append("return new ").Append(SymbolNames.Type(targetType)).AppendLine("(")
                 .AppendLine(string.Join(",\n", arguments)).AppendLine(") {");
             var setsRequired = constructor.GetAttributes().Any(attribute =>
                 attribute.AttributeClass?.ToDisplayString() == "System.Diagnostics.CodeAnalysis.SetsRequiredMembersAttribute");
-            BuildProperties(body, method, sourceProperties, targetProperties, renames, ignores, conversion, sourceName,
-                null, consumed, setsRequired, sourceCoverage);
-            body.AppendLine("};");
+            BuildProperties(mappingBody, method, sourceProperties, targetProperties, renames, ignores, values,
+                null, consumed, setsRequired);
+            mappingBody.AppendLine("};");
         }
 
         sourceCoverage.Validate();
+        body.Append(values.Declarations).Append(mappingBody);
         foreach (var helper in conversion.CollectionHelpers) { body.AppendLine(helper); }
         body.AppendLine("}");
         return body.ToString();
     }
 
     private void BuildProperties(StringBuilder body, IMethodSymbol method, IPropertySymbol[] sourceProperties,
-        IPropertySymbol[] targetProperties, Dictionary<string, SourcePropertyPath> renames, HashSet<string> ignores,
-        ConversionBuilder conversion, string sourceName, string? targetName, HashSet<string> consumed, bool constructorSetsRequired,
-        SourceCoverageValidator sourceCoverage)
+        IPropertySymbol[] targetProperties, Dictionary<string, PropertyMapping> renames, HashSet<string> ignores,
+        MappingValueBuilder values, string? targetName, HashSet<string> consumed, bool constructorSetsRequired, string prefix = "")
     {
         foreach (var target in targetProperties)
         {
             _cancellationToken.ThrowIfCancellationRequested();
             if (ignores.Contains(target.Name))
             {
-                if (!method.ReturnsVoid && target.IsRequired && !constructorSetsRequired)
+                if (targetName is null && target.IsRequired && !constructorSetsRequired)
                 {
-                    Report(MappingDiagnostics.Configuration, method, $"Cannot ignore required target property '{target.Name}'");
+                    Report(MappingDiagnostics.Configuration, method, $"Cannot ignore required target property '{prefix}{target.Name}'");
                 }
                 continue;
             }
@@ -262,41 +272,44 @@ internal sealed class MappingPlanner
             }
 
             if (consumed.Contains(target.Name) && (!target.IsRequired || constructorSetsRequired)) { continue; }
-            var source = FindSource(target.Name, sourceProperties, renames);
-            if (source is null)
+            var mapping = FindSourceMapping(target.Name, sourceProperties, renames);
+            if (mapping is null)
             {
-                Report(MappingDiagnostics.MissingSource, method, target.Name, method.Name);
+                Report(MappingDiagnostics.MissingSource, method, prefix + target.Name, method.Name);
                 continue;
             }
 
             if (target.SetMethod?.DeclaredAccessibility != Accessibility.Public ||
-                (method.ReturnsVoid && target.SetMethod.IsInitOnly))
+                (targetName is not null && target.SetMethod.IsInitOnly))
             {
                 Report(MappingDiagnostics.Target, method,
-                    $"Target property '{target.Name}' is not writable in this mapping; map it through a constructor or explicitly ignore it");
+                    $"Target property '{prefix}{target.Name}' is not writable in this mapping; map it through a constructor or explicitly ignore it");
                 continue;
             }
 
-            var expression = conversion.Convert(source.GetResultType(_compilation), target.Type,
-                source.Access(sourceName), target.Name);
-            sourceCoverage.RecordMapped(source.RootName);
+            if (targetName is not null && mapping.NestedTarget is { } nested)
+            {
+                BuildNestedUpdate(body, target, nested, targetName, prefix + target.Name, method, values);
+                continue;
+            }
+            var expression = BuildValue(mapping, target.Type, prefix + target.Name, method, values);
             body.Append(targetName is null ? "" : targetName + ".").Append(SymbolNames.Identifier(target.Name))
                 .Append(" = ").Append(expression).AppendLine(targetName is null ? "," : ";");
         }
     }
 
     private IMethodSymbol? SelectConstructor(IMethodSymbol method, INamedTypeSymbol target, IPropertySymbol[] source,
-        IPropertySymbol[] targetProperties, Dictionary<string, SourcePropertyPath> renames, HashSet<string> ignores)
+        IPropertySymbol[] targetProperties, Dictionary<string, PropertyMapping> renames, HashSet<string> ignores)
     {
         var viable = target.InstanceConstructors.Where(constructor => constructor.DeclaredAccessibility == Accessibility.Public &&
             constructor.Parameters.All(parameter => parameter.RefKind == RefKind.None &&
-                (parameter.IsOptional || (!ignores.Contains(parameter.Name) && FindSource(parameter.Name, source, renames) is not null))))
+                (parameter.IsOptional || (!ignores.Contains(parameter.Name) && FindSourceMapping(parameter.Name, source, renames) is not null))))
             .ToArray();
         var readOnlyProperties = targetProperties.Where(property => !property.IsIndexer && !ignores.Contains(property.Name) &&
             property.SetMethod?.DeclaredAccessibility != Accessibility.Public).ToArray();
         var coveringConstructors = viable.Where(constructor => readOnlyProperties.All(property =>
             constructor.Parameters.Any(parameter => string.Equals(parameter.Name, property.Name, StringComparison.OrdinalIgnoreCase) &&
-                FindSource(parameter.Name, source, renames) is not null))).ToArray();
+                FindSourceMapping(parameter.Name, source, renames) is not null))).ToArray();
         // Keep the existing property diagnostics when no constructor can cover the read-only members.
         if (coveringConstructors.Length > 0) { viable = coveringConstructors; }
         var parameterless = viable.FirstOrDefault(constructor => constructor.Parameters.Length == 0);
@@ -309,7 +322,7 @@ internal sealed class MappingPlanner
     }
 
     private void ReadConfiguration(IMethodSymbol method, IPropertySymbol[] source, INamedTypeSymbol target,
-        IPropertySymbol[] properties, Dictionary<string, SourcePropertyPath> renames, HashSet<string> ignores)
+        IPropertySymbol[] properties, Dictionary<string, PropertyMapping> renames, HashSet<string> ignores)
     {
         var targetNames = new HashSet<string>(properties.Select(property => property.Name), StringComparer.OrdinalIgnoreCase);
         if (!method.ReturnsVoid)
@@ -329,16 +342,58 @@ internal sealed class MappingPlanner
                 }
                 var sourceName = attribute.ConstructorArguments[0].Value as string;
                 var targetName = attribute.ConstructorArguments[1].Value as string;
-                if (sourceName is null || targetName is null ||
-                    !targetNames.Contains(targetName) || renames.ContainsKey(targetName))
+                var useArgument = attribute.NamedArguments.FirstOrDefault(argument => argument.Key == "Use");
+                var use = useArgument.Value.Value as string;
+                if (useArgument.Key is not null && string.IsNullOrWhiteSpace(use))
                 {
-                    Report(MappingDiagnostics.Configuration, method, "MapProperty requires a source property path, an existing direct target name, and one configuration per target");
+                    Report(MappingDiagnostics.Configuration, method,
+                        $"MapProperty.Use for target '{targetName}' in mapping '{method.Name}' requires a non-empty helper name; use nameof to reference a method in this mapper");
+                    continue;
+                }
+                if (sourceName is null || targetName is null ||
+                    !IsTargetPath(targetName, targetNames) || renames.ContainsKey(targetName))
+                {
+                    Report(MappingDiagnostics.Configuration, method, $"MapProperty target path '{targetName}' must contain non-empty property names, start at an existing target property or constructor parameter, and have one configuration per target");
                 }
                 else
                 {
                     var path = SourcePropertyPath.Resolve(source, sourceName, _cancellationToken, out var error);
                     if (path is null) { Report(MappingDiagnostics.Configuration, method, error); }
-                    else { renames.Add(targetName, path); }
+                    else { renames.Add(targetName, new PropertyMapping(path, use)); }
+                }
+            }
+            else if (name is "XBullet.EasyMapping.MapConstantAttribute" or "XBullet.EasyMapping.MapGeneratedValueAttribute")
+            {
+                var constant = name == "XBullet.EasyMapping.MapConstantAttribute";
+                var attributeName = constant ? "MapConstant" : "MapGeneratedValue";
+                var requiredArguments = constant ? 2 : 1;
+                if (attribute.ConstructorArguments.Length != requiredArguments ||
+                    attribute.ConstructorArguments[0].Value is not string targetName || !IsTargetPath(targetName, targetNames))
+                {
+                    Report(MappingDiagnostics.Configuration, method,
+                        $"{attributeName} requires a valid target property path or constructor parameter and {(constant ? "a constant value" : "a helper name in Use")}");
+                    continue;
+                }
+                if (renames.ContainsKey(targetName))
+                {
+                    Report(MappingDiagnostics.Configuration, method,
+                        $"Target '{targetName}' has multiple configurations; choose one of MapProperty, MapConstant, or MapGeneratedValue");
+                    continue;
+                }
+                if (constant)
+                {
+                    renames.Add(targetName, PropertyMapping.ForConstant(attribute.ConstructorArguments[1]));
+                }
+                else
+                {
+                    var use = attribute.NamedArguments.FirstOrDefault(argument => argument.Key == "Use").Value.Value as string;
+                    if (string.IsNullOrWhiteSpace(use))
+                    {
+                        Report(MappingDiagnostics.Configuration, method,
+                            $"MapGeneratedValue.Use for target '{targetName}' in mapping '{method.Name}' requires a non-empty parameterless helper name");
+                        continue;
+                    }
+                    renames.Add(targetName, PropertyMapping.ForGeneratedValue(use!));
                 }
             }
             else if (name == "XBullet.EasyMapping.MapIgnoreTargetAttribute")
@@ -349,16 +404,11 @@ internal sealed class MappingPlanner
                     continue;
                 }
                 var targetName = attribute.ConstructorArguments[0].Value as string;
-                if (targetName is null || !targetNames.Contains(targetName) || !ignores.Add(targetName))
+                if (targetName is null || !IsTargetPath(targetName, targetNames) || !ignores.Add(targetName))
                 {
                     Report(MappingDiagnostics.Configuration, method, "MapIgnoreTarget requires an existing target and cannot be repeated");
                 }
             }
-        }
-
-        foreach (var name in renames.Keys.Where(ignores.Contains))
-        {
-            Report(MappingDiagnostics.Configuration, method, $"Target '{name}' cannot be both mapped and ignored");
         }
 
         for (var current = target; current is not null; current = current.BaseType)
@@ -371,12 +421,119 @@ internal sealed class MappingPlanner
         }
     }
 
-    private static SourcePropertyPath? FindSource(string targetName, IPropertySymbol[] source, Dictionary<string, SourcePropertyPath> renames)
+    private static bool IsTargetPath(string path, HashSet<string> names)
+    {
+        var segments = path.Split('.');
+        return segments.All(segment => segment.Length > 0) && names.Contains(segments[0]);
+    }
+
+    private string BuildValue(PropertyMapping mapping, ITypeSymbol target, string member, IMethodSymbol method, MappingValueBuilder values) =>
+        mapping.NestedTarget is { } scope ? BuildNestedCreation(target, scope, member, method, values) : values.Build(mapping, target, member);
+
+    private INamedTypeSymbol? NestedTargetType(ITypeSymbol type, TargetMappingScope scope, string member, IMethodSymbol method, bool update)
+    {
+        if (SymbolNames.NonNullable(type) is not INamedTypeSymbol target || target.TypeKind is not (TypeKind.Class or TypeKind.Struct) ||
+            target.SpecialType != SpecialType.None || target.IsAbstract || target.IsRefLikeType || ConversionBuilder.TryElement(target, out _))
+        {
+            Report(MappingDiagnostics.Target, method,
+                $"Nested target path '{member}.{scope.FirstPath()}' requires a concrete DTO intermediate; '{member}' has type '{SymbolNames.Type(type)}'");
+            return null;
+        }
+        var properties = SymbolNames.Properties(target);
+        var names = new HashSet<string>(properties.Select(property => property.Name), StringComparer.OrdinalIgnoreCase);
+        if (!update)
+        {
+            names.UnionWith(target.InstanceConstructors.Where(constructor => constructor.DeclaredAccessibility == Accessibility.Public)
+                .SelectMany(constructor => constructor.Parameters.Select(parameter => parameter.Name)));
+        }
+        foreach (var name in scope.Mappings.Keys.Concat(scope.Ignored).Where(name => !names.Contains(name)))
+        {
+            var suffix = scope.Mappings.TryGetValue(name, out var mapping) && mapping.NestedTarget is { } child ? "." + child.FirstPath() : "";
+            Report(MappingDiagnostics.Configuration, method,
+                $"Nested target path '{member}.{name}{suffix}' has no public property or selected constructor parameter for segment '{name}'");
+        }
+        if (properties.GroupBy(property => property.Name, StringComparer.OrdinalIgnoreCase).Any(group => group.Count() > 1))
+        {
+            Report(MappingDiagnostics.Configuration, method, $"Nested target '{member}' has ambiguous property names differing only by case");
+        }
+        for (var current = target; current is not null; current = current.BaseType)
+        {
+            if (current.GetMembers().OfType<IFieldSymbol>().Any(field => !field.IsStatic && field.DeclaredAccessibility == Accessibility.Public))
+            {
+                Report(MappingDiagnostics.Target, method, $"Nested target '{member}' has unsupported public fields; use properties");
+                break;
+            }
+        }
+        return target;
+    }
+
+    private string BuildNestedCreation(ITypeSymbol type, TargetMappingScope scope, string member, IMethodSymbol method, MappingValueBuilder values)
+    {
+        var target = NestedTargetType(type, scope, member, method, update: false);
+        if (target is null) { return "default!"; }
+        var properties = SymbolNames.Properties(target);
+        var constructor = SelectConstructor(method, target, [], properties, scope.Mappings, scope.Ignored);
+        if (constructor is null) { return "default!"; }
+        var used = new HashSet<string>(properties.Select(property => property.Name), StringComparer.OrdinalIgnoreCase);
+        used.UnionWith(constructor.Parameters.Select(parameter => parameter.Name));
+        foreach (var name in scope.Mappings.Keys.Concat(scope.Ignored).Where(name => !used.Contains(name)))
+        {
+            Report(MappingDiagnostics.Configuration, method, $"Nested target '{member}.{name}' is not used by the selected constructor or properties");
+        }
+        var arguments = new List<string>();
+        var consumed = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+        foreach (var parameter in constructor.Parameters)
+        {
+            if (!scope.Mappings.TryGetValue(parameter.Name, out var mapping) || scope.Ignored.Contains(parameter.Name)) { continue; }
+            consumed.Add(parameter.Name);
+            arguments.Add(SymbolNames.Identifier(parameter.Name) + ": " + BuildValue(mapping, parameter.Type, member + "." + parameter.Name, method, values));
+        }
+        var body = new StringBuilder("new ").Append(SymbolNames.Type(target)).AppendLine("(")
+            .AppendLine(string.Join(",\n", arguments)).AppendLine(") {");
+        var setsRequired = constructor.GetAttributes().Any(attribute =>
+            attribute.AttributeClass?.ToDisplayString() == "System.Diagnostics.CodeAnalysis.SetsRequiredMembersAttribute");
+        BuildProperties(body, method, [], properties, scope.Mappings, scope.Ignored, values, null, consumed, setsRequired, member + ".");
+        return body.Append('}').ToString();
+    }
+
+    private void BuildNestedUpdate(StringBuilder body, IPropertySymbol property, TargetMappingScope scope, string parent,
+        string member, IMethodSymbol method, MappingValueBuilder values)
+    {
+        if (property.GetMethod?.DeclaredAccessibility != Accessibility.Public)
+        {
+            Report(MappingDiagnostics.Target, method, $"Nested update target '{member}' requires a public getter and writable setter");
+            return;
+        }
+        var target = NestedTargetType(property.Type, scope, member, method, update: true);
+        if (target is null) { return; }
+        var access = parent + "." + SymbolNames.Identifier(property.Name);
+        var local = values.NewName();
+        body.Append("var ").Append(local).Append(" = ").Append(access).AppendLine(";");
+        var nullable = SymbolNames.IsNullable(property.Type);
+        if (target.IsReferenceType || nullable)
+        {
+            body.Append("if (").Append(local).AppendLine(" is null) {")
+                .Append(access).Append(" = ").Append(BuildNestedCreation(property.Type, scope, member, method, values)).AppendLine(";")
+                .AppendLine("} else {");
+        }
+        var updateLocal = local;
+        if (target.IsValueType && nullable)
+        {
+            updateLocal = values.NewName();
+            body.Append("var ").Append(updateLocal).Append(" = ").Append(local).AppendLine(".Value;");
+        }
+        BuildProperties(body, method, [], SymbolNames.Properties(target), scope.Mappings, scope.Ignored, values,
+            updateLocal, new HashSet<string>(StringComparer.OrdinalIgnoreCase), constructorSetsRequired: false, member + ".");
+        if (target.IsValueType) { body.Append(access).Append(" = ").Append(updateLocal).AppendLine(";"); }
+        if (target.IsReferenceType || nullable) { body.AppendLine("}"); }
+    }
+
+    private static PropertyMapping? FindSourceMapping(string targetName, IPropertySymbol[] source, Dictionary<string, PropertyMapping> renames)
     {
         if (renames.TryGetValue(targetName, out var path)) { return path; }
         var property = source.FirstOrDefault(property => property.Name == targetName) ??
             source.FirstOrDefault(property => string.Equals(property.Name, targetName, StringComparison.OrdinalIgnoreCase));
-        return property is null ? null : new SourcePropertyPath(property);
+        return property is null ? null : new PropertyMapping(new SourcePropertyPath(property));
     }
 
     private bool HasCycle(IMethodSymbol method, HashSet<IMethodSymbol> visiting, HashSet<IMethodSymbol> visited)
