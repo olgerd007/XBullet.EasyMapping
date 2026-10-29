@@ -13,7 +13,13 @@ public sealed class MapConstantAttribute : Attribute
         Value = value;
     }
 
-    public string Target { get; }
+    public string Target
+    {
+        get;
+    }
 
-    public object? Value { get; }
+    public object? Value
+    {
+        get;
+    }
 }

@@ -36,6 +36,7 @@ internal sealed class TargetMappingScope
                 scope.Mappings.Add(name, PropertyMapping.ForNestedTarget(
                     Create(children, childIgnores, report, cancellationToken, prefix + name + ".")));
             }
+
             if (ignored.Contains(name))
             {
                 scope.Ignored.Add(name);
@@ -45,6 +46,7 @@ internal sealed class TargetMappingScope
                 }
             }
         }
+
         return scope;
     }
 

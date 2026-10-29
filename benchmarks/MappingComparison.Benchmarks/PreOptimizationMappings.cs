@@ -8,7 +8,11 @@ public static class PreOptimizationMappings
 {
     public static PersonDto? ToDto(PersonInput? source)
     {
-        if (source is null) { return default; }
+        if (source is null)
+        {
+            return default;
+        }
+
         return new PersonDto(
             Id: source.Id,
             DisplayName: source.Name,
@@ -21,7 +25,11 @@ public static class PreOptimizationMappings
 
     private static AddressDto MapAddress(AddressInput source)
     {
-        if (source is null) { throw new ArgumentNullException(nameof(source)); }
+        if (source is null)
+        {
+            throw new ArgumentNullException(nameof(source));
+        }
+
         return new AddressDto(City: source.City, Street: source.Street);
     }
 }

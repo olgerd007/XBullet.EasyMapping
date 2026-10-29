@@ -40,6 +40,7 @@ public sealed class MappingGenerator : IIncrementalGenerator
             {
                 productionContext.AddSource(mapper.HintName, SourceText.From(mapper.Source, Encoding.UTF8));
             }
+
             if (mapper.Approval is { } approval)
             {
                 productionContext.AddSource(approval.SourceHint, SourceText.From(approval.GenerateSource(), Encoding.UTF8));

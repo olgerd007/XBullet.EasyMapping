@@ -9,8 +9,14 @@ public sealed class MapGeneratedValueAttribute : Attribute
 {
     public MapGeneratedValueAttribute(string target) => Target = target;
 
-    public string Target { get; }
+    public string Target
+    {
+        get;
+    }
 
     /// <summary>Names a synchronous parameterless helper in the mapper that produces the target value.</summary>
-    public string? Use { get; set; }
+    public string? Use
+    {
+        get; set;
+    }
 }

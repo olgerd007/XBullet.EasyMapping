@@ -35,12 +35,14 @@ internal sealed class MappingValueBuilder
             _coverage.RecordMapped(source.RootName);
             return _conversion.Convert(source.GetResultType(_compilation), target, source.Access(_sourceName), member, mapping.Use);
         }
+
         if (mapping.Constant is { } constant)
         {
             if (ConstantValueBuilder.TryBuild(constant, target, out var expression, out var error))
             {
                 return constant.Kind == TypedConstantKind.Array && !constant.IsNull ? Cache(member, expression) : expression;
             }
+
             _report(MappingDiagnostics.Configuration, [$"MapConstant for target '{member}' in mapping '{_methodName}': {error}"]);
             return "default!";
         }
@@ -50,7 +52,11 @@ internal sealed class MappingValueBuilder
 
     private string Cache(string member, string expression)
     {
-        if (_generatedLocals.TryGetValue(member, out var local)) { return local; }
+        if (_generatedLocals.TryGetValue(member, out var local))
+        {
+            return local;
+        }
+
         local = _conversion.NewName();
         _generatedLocals.Add(member, local);
         // A required member can also be a constructor argument; use the same value in both.

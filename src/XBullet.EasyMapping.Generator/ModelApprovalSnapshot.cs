@@ -18,11 +18,26 @@ internal sealed class ModelApprovalSnapshot : IEquatable<ModelApprovalSnapshot>
         SourcePath = sourcePath;
     }
 
-    public string FileName { get; }
-    public string SourceHint { get; }
-    public string Content { get; }
-    public MappingDiagnostic Diagnostic { get; }
-    public string SourcePath { get; }
+    public string FileName
+    {
+        get;
+    }
+    public string SourceHint
+    {
+        get;
+    }
+    public string Content
+    {
+        get;
+    }
+    public MappingDiagnostic Diagnostic
+    {
+        get;
+    }
+    public string SourcePath
+    {
+        get;
+    }
 
     public string GenerateSource()
     {
@@ -30,7 +45,11 @@ internal sealed class ModelApprovalSnapshot : IEquatable<ModelApprovalSnapshot>
         // Paths are transport metadata, never part of the portable approved model shape.
         source.Append(SourcePathMarker).Append(Convert.ToBase64String(Encoding.UTF8.GetBytes(SourcePath))).Append('\n');
         source.Append(StartMarker).Append('\n');
-        foreach (var line in Content.TrimEnd('\n').Split('\n')) { source.Append("// ").Append(line).Append('\n'); }
+        foreach (var line in Content.TrimEnd('\n').Split('\n'))
+        {
+            source.Append("// ").Append(line).Append('\n');
+        }
+
         return source.Append(EndMarker).Append('\n').ToString();
     }
 

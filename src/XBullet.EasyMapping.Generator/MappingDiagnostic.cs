@@ -15,11 +15,26 @@ internal sealed class MappingDiagnostic : IEquatable<MappingDiagnostic>
         Arguments = arguments;
     }
 
-    private DiagnosticDescriptor Descriptor { get; }
-    private string FilePath { get; }
-    private TextSpan Span { get; }
-    private LinePositionSpan Lines { get; }
-    private string[] Arguments { get; }
+    private DiagnosticDescriptor Descriptor
+    {
+        get;
+    }
+    private string FilePath
+    {
+        get;
+    }
+    private TextSpan Span
+    {
+        get;
+    }
+    private LinePositionSpan Lines
+    {
+        get;
+    }
+    private string[] Arguments
+    {
+        get;
+    }
 
     private MappingDiagnostic(MappingDiagnostic original, string[] arguments)
     {

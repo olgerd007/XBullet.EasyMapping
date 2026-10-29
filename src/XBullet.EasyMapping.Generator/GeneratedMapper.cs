@@ -14,10 +14,22 @@ internal sealed class GeneratedMapper : IEquatable<GeneratedMapper>
         Approval = approval;
     }
 
-    public string HintName { get; }
-    public string Source { get; }
-    public ImmutableArray<MappingDiagnostic> Diagnostics { get; }
-    public ModelApprovalSnapshot? Approval { get; }
+    public string HintName
+    {
+        get;
+    }
+    public string Source
+    {
+        get;
+    }
+    public ImmutableArray<MappingDiagnostic> Diagnostics
+    {
+        get;
+    }
+    public ModelApprovalSnapshot? Approval
+    {
+        get;
+    }
 
     public bool Equals(GeneratedMapper? other) => other is not null &&
         HintName == other.HintName && Source == other.Source && Diagnostics.SequenceEqual(other.Diagnostics) &&

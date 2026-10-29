@@ -33,13 +33,20 @@ internal sealed class ConversionBuilder
     public string NewName()
     {
         string name;
-        do { name = "__mapperValue" + _counter++; } while (!_names.Add(name));
+        do
+        {
+            name = "__mapperValue" + _counter++;
+        } while (!_names.Add(name));
         return name;
     }
 
     public string Convert(ITypeSymbol source, ITypeSymbol target, string expression, string member, string? use = null)
     {
-        if (use is not null) { return ConvertUsingHelper(source, target, expression, member, use); }
+        if (use is not null)
+        {
+            return ConvertUsingHelper(source, target, expression, member, use);
+        }
+
         var exactCandidates = FindCandidates(source, target, exact: true)
             .Where(candidate => !candidate.IsPartialDefinition || candidate.PartialImplementationPart is not null ||
                 !SymbolNames.IsNullable(source) || SymbolNames.IsNullable(target)).ToArray();
@@ -210,6 +217,7 @@ internal sealed class ConversionBuilder
                 [$"MapGeneratedValue.Use helper '{use}' for target '{member}' in mapping '{_method.Name}' requires one compatible synchronous, non-generic, parameterless method returning '{SymbolNames.Type(target)}' with safe nullability and static/instance access"]);
             return "default!";
         }
+
         return Call(candidates[0], "");
     }
 

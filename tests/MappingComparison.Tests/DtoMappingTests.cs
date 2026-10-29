@@ -36,7 +36,10 @@ public sealed class DtoMappingTests
     [MemberData(nameof(ComparisonCases.Engines), MemberType = typeof(ComparisonCases))]
     public void Null_nested_dto_is_preserved(MappingEngine engine)
     {
-        var source = ComparisonCases.CreatePerson() with { Address = null };
+        var source = ComparisonCases.CreatePerson() with
+        {
+            Address = null
+        };
 
         var result = JsonSerializer.SerializeToElement(ComparisonCases.Map(engine, source));
 
@@ -47,7 +50,11 @@ public sealed class DtoMappingTests
     [MemberData(nameof(ComparisonCases.Engines), MemberType = typeof(ComparisonCases))]
     public void Null_collections_expose_each_engines_policy(MappingEngine engine)
     {
-        var source = ComparisonCases.CreatePerson() with { Tags = null, PreviousAddresses = null };
+        var source = ComparisonCases.CreatePerson() with
+        {
+            Tags = null,
+            PreviousAddresses = null
+        };
 
         var result = JsonSerializer.SerializeToElement(ComparisonCases.Map(engine, source));
 
@@ -70,7 +77,11 @@ public sealed class DtoMappingTests
     [MemberData(nameof(ComparisonCases.Engines), MemberType = typeof(ComparisonCases))]
     public void Empty_collections_remain_empty(MappingEngine engine)
     {
-        var source = ComparisonCases.CreatePerson() with { Tags = [], PreviousAddresses = [] };
+        var source = ComparisonCases.CreatePerson() with
+        {
+            Tags = [],
+            PreviousAddresses = []
+        };
 
         var result = JsonSerializer.SerializeToElement(ComparisonCases.Map(engine, source));
 
@@ -119,7 +130,10 @@ public sealed class DtoMappingTests
         var facet = new PersonFacet(7, "Constructor value", null, null, null);
 
         Assert.Equal("Constructor value", facet.DisplayName);
-        Assert.Equal("Changed value", (facet with { DisplayName = "Changed value" }).DisplayName);
+        Assert.Equal("Changed value", (facet with
+        {
+            DisplayName = "Changed value"
+        }).DisplayName);
     }
 
     [Fact]

@@ -18,13 +18,25 @@ internal sealed class PropertyMapping
 
     private PropertyMapping(TargetMappingScope nestedTarget) => NestedTarget = nestedTarget;
 
-    public SourcePropertyPath? Source { get; }
+    public SourcePropertyPath? Source
+    {
+        get;
+    }
 
-    public TypedConstant? Constant { get; }
+    public TypedConstant? Constant
+    {
+        get;
+    }
 
-    public TargetMappingScope? NestedTarget { get; }
+    public TargetMappingScope? NestedTarget
+    {
+        get;
+    }
 
-    public string? Use { get; }
+    public string? Use
+    {
+        get;
+    }
 
     public static PropertyMapping ForConstant(TypedConstant constant) => new(constant, null);
 

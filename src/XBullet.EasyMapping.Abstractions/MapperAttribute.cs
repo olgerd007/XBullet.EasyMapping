@@ -11,5 +11,8 @@ public sealed class MapperAttribute : Attribute
     public MappingCoverage Coverage { get; set; } = MappingCoverage.Target;
 
     /// <summary>Requires an approved model-shape snapshot supplied through AdditionalFiles.</summary>
-    public bool RequireModelApproval { get; set; }
+    public bool RequireModelApproval
+    {
+        get; set;
+    }
 }

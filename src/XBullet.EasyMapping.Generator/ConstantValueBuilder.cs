@@ -13,6 +13,7 @@ internal static class ConstantValueBuilder
             error = "the value must be a valid C# attribute constant";
             return false;
         }
+
         if (constant.IsNull)
         {
             if (!SymbolNames.IsNullable(target))
@@ -20,15 +21,18 @@ internal static class ConstantValueBuilder
                 error = $"null requires a nullable target, but '{SymbolNames.Type(target)}' is non-nullable";
                 return false;
             }
+
             expression = "default(" + SymbolNames.Type(target) + ")";
             error = "";
             return true;
         }
+
         if (constant.Type is null || !SymbolEqualityComparer.Default.Equals(constant.Type, SymbolNames.NonNullable(target)))
         {
             error = $"constant type '{constant.Type?.ToDisplayString() ?? "unknown"}' must exactly match target type '{SymbolNames.Type(target)}' (apart from nullable lifting)";
             return false;
         }
+
         if (constant.Kind == TypedConstantKind.Array)
         {
             if (SymbolNames.NonNullable(target) is not IArrayTypeSymbol { Rank: 1 } array)
@@ -36,6 +40,7 @@ internal static class ConstantValueBuilder
                 error = "array constants require a one-dimensional array target";
                 return false;
             }
+
             var elements = new List<string>();
             for (var index = 0; index < constant.Values.Length; index++)
             {
@@ -48,8 +53,10 @@ internal static class ConstantValueBuilder
                     error = $"array element [{index}]: {error}";
                     return false;
                 }
+
                 elements.Add(element);
             }
+
             expression = "new " + SymbolNames.Type(SymbolNames.NonNullable(target)) + " { " + string.Join(", ", elements) + " }";
             error = "";
             return true;

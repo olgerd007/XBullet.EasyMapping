@@ -8,21 +8,37 @@ using Microsoft.Build.Utilities;
 public sealed class MapperWriteReceivedApprovals : Task
 {
     [Required]
-    public string GeneratedDirectory { get; set; }
+    public string GeneratedDirectory
+    {
+        get; set;
+    }
 
-    public string ApprovalDirectory { get; set; }
+    public string ApprovalDirectory
+    {
+        get; set;
+    }
 
     [Required]
-    public string ProjectDirectory { get; set; }
+    public string ProjectDirectory
+    {
+        get; set;
+    }
 
-    public ITaskItem[] ApprovedFiles { get; set; }
+    public ITaskItem[] ApprovedFiles
+    {
+        get; set;
+    }
 
     public override bool Execute()
     {
         try
         {
             var generatedDirectory = ResolvePath(GeneratedDirectory);
-            if (!Directory.Exists(generatedDirectory)) { return true; }
+            if (!Directory.Exists(generatedDirectory))
+            {
+                return true;
+            }
+
             foreach (var candidate in Directory.GetFiles(generatedDirectory, "*.ModelApproval.g.cs"))
             {
                 var lines = File.ReadAllLines(candidate);
@@ -40,6 +56,7 @@ public sealed class MapperWriteReceivedApprovals : Task
                     {
                         throw new InvalidDataException("Invalid mapper approval comment: " + candidate);
                     }
+
                     content.Append(lines[index].Substring(3)).Append('\n');
                 }
 
@@ -54,7 +71,11 @@ public sealed class MapperWriteReceivedApprovals : Task
                 if (approvals.Length == 1 && File.Exists(ResolvePath(approvals[0].ItemSpec)) &&
                     Normalize(File.ReadAllText(ResolvePath(approvals[0].ItemSpec))) == text)
                 {
-                    if (File.Exists(receivedPath)) { File.Delete(receivedPath); }
+                    if (File.Exists(receivedPath))
+                    {
+                        File.Delete(receivedPath);
+                    }
+
                     continue;
                 }
 
@@ -63,10 +84,12 @@ public sealed class MapperWriteReceivedApprovals : Task
                 {
                     File.WriteAllText(receivedPath, text, new UTF8Encoding(false));
                 }
+
                 Log.LogMessage(MessageImportance.High,
                     "Mapper: review '{0}', then rename it to '{1}' (replace the old approved file) and rebuild.",
                     receivedPath, approvedName);
             }
+
             return true;
         }
         catch (Exception exception)
@@ -83,11 +106,18 @@ public sealed class MapperWriteReceivedApprovals : Task
 
     private string GetApprovalDirectory(string[] lines, ITaskItem[] approvals)
     {
-        if (!string.IsNullOrWhiteSpace(ApprovalDirectory)) { return ResolvePath(ApprovalDirectory); }
+        if (!string.IsNullOrWhiteSpace(ApprovalDirectory))
+        {
+            return ResolvePath(ApprovalDirectory);
+        }
+
         if (approvals.Length == 1)
         {
             var approvedPath = ResolvePath(approvals[0].ItemSpec);
-            if (IsInProject(approvedPath)) { return Path.GetDirectoryName(approvedPath); }
+            if (IsInProject(approvedPath))
+            {
+                return Path.GetDirectoryName(approvedPath);
+            }
         }
 
         const string marker = "// MapperSourcePath: ";
@@ -98,9 +128,13 @@ public sealed class MapperWriteReceivedApprovals : Task
             if (!string.IsNullOrWhiteSpace(sourcePath))
             {
                 var resolved = ResolvePath(sourcePath);
-                if (IsInProject(resolved)) { return Path.GetDirectoryName(resolved); }
+                if (IsInProject(resolved))
+                {
+                    return Path.GetDirectoryName(resolved);
+                }
             }
         }
+
         // Linked sources outside the project must not cause writes into another checkout.
         return Path.GetFullPath(ProjectDirectory);
     }

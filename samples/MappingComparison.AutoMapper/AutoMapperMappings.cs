@@ -20,7 +20,10 @@ public sealed class AutoMapperMappings
         _mapper = Configuration.CreateMapper();
     }
 
-    public MapperConfiguration Configuration { get; }
+    public MapperConfiguration Configuration
+    {
+        get;
+    }
 
     public PersonDto? ToDto(PersonInput? source) => _mapper.Map<PersonDto?>(source);
 

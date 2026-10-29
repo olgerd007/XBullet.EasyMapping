@@ -13,10 +13,19 @@ public sealed class MapPropertyAttribute : Attribute
         Target = target;
     }
 
-    public string Source { get; }
+    public string Source
+    {
+        get;
+    }
 
-    public string Target { get; }
+    public string Target
+    {
+        get;
+    }
 
     /// <summary>Names a helper in the mapper to use only for explicitly configured member conversions.</summary>
-    public string? Use { get; set; }
+    public string? Use
+    {
+        get; set;
+    }
 }

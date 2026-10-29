@@ -22,7 +22,10 @@ public sealed class ModelApprovalSerializationTests
 
         Assert.Equal(expected ? 1 : 0, driver.GetRunResult().Diagnostics.Length);
         Assert.Empty(compilation.GetDiagnostics().Where(error => error.Severity >= DiagnosticSeverity.Warning));
-        if (expected) { Assert.Contains("coverage Target", Snapshot(driver), StringComparison.Ordinal); }
+        if (expected)
+        {
+            Assert.Contains("coverage Target", Snapshot(driver), StringComparison.Ordinal);
+        }
     }
 
     [Fact]

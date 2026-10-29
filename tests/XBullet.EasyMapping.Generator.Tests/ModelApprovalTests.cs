@@ -356,6 +356,7 @@ public sealed class ModelApprovalTests
             models = models.Replace("AddressInput(string City)", "AddressInput(string City, int Internal)", StringComparison.Ordinal);
             mapper = mapper.Replace("private static partial AddressDto?", "[MapIgnoreSource(\"Internal\")] private static partial AddressDto?", StringComparison.Ordinal);
         }
+
         var changedModels = scenario switch
         {
             "nested_member" => models.Replace("AddressInput? Address)", "AddressInput? Address, string? Note)", StringComparison.Ordinal)

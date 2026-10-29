@@ -8,6 +8,12 @@ internal sealed class ModelApprovalFile
         Content = content;
     }
 
-    public string FileName { get; }
-    public string? Content { get; }
+    public string FileName
+    {
+        get;
+    }
+    public string? Content
+    {
+        get;
+    }
 }
