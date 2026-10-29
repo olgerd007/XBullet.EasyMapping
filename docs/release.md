@@ -1,8 +1,6 @@
 # Releases and versioning
 
-This document describes preparation of **1.2.0** as of 2026-10-29.
-The release is not published; its changelog entry remains `Unreleased` until the
-final release commit is ready.
+This document describes the release procedure for **1.2.0**, dated 2026-10-29.
 NuGet publication is complete only when the publishing workflow succeeds. The
 existing release tags and published package versions remain immutable. A `v<version>` tag and
 GitHub Release identify the tested source commit; NuGet publication completes after approval of

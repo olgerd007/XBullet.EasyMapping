@@ -1,6 +1,6 @@
 # Changelog
 
-## 1.2.0 — Unreleased
+## 1.2.0 — 2026-10-29
 
 - Support dot-separated source paths in `MapProperty` for flattening nested
   properties into target properties and constructor parameters, including updates.
