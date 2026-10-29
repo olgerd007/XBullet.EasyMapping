@@ -1,6 +1,6 @@
 # Changelog
 
-## 1.3.0 — Unreleased
+## 1.3.0 — 2026-10-30
 
 - Select source converters explicitly with `MapProperty.Use`, including nullable
   values, nested source paths, and whole collections. Invalid helper bindings

@@ -13,7 +13,7 @@ Version **1.1.2** fixes converter shadowing, file-local
 diagnostics, enum approvals, and installation documentation.
 Version **1.2.0** adds nested source paths, constructor
 selection improvements, and navigable mapping diagnostics.
-Version **1.3.0 (in preparation)** adds explicit converters, constant and generated
+Version **1.3.0** adds explicit converters, constant and generated
 target values, and nested target paths for creation and updates.
 See the [release guide](docs/release.md),
 [release notes](CHANGELOG.md), and [MIT license](LICENSE).
