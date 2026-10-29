@@ -11,7 +11,7 @@ Version **1.1.0** is the first published release of the owned generator.
 Version **1.1.1** adds collection-mapping performance improvements and CI maintenance.
 Version **1.1.2** fixes converter shadowing, file-local
 diagnostics, enum approvals, and installation documentation.
-Version **1.2.0** is in preparation and adds nested source paths, constructor
+Version **1.2.0** adds nested source paths, constructor
 selection improvements, and navigable mapping diagnostics.
 See the [release guide](docs/release.md),
 [release notes](CHANGELOG.md), and [MIT license](LICENSE).
