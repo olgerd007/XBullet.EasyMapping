@@ -156,7 +156,7 @@ internal sealed class MappingPlanner
         {
             Report(MappingDiagnostics.Configuration, method, "DTO property names must be unique when compared without case");
         }
-        var renames = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
+        var renames = new Dictionary<string, SourcePropertyPath>(StringComparer.OrdinalIgnoreCase);
         var ignores = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
         ReadConfiguration(method, sourceProperties, targetType, targetProperties, renames, ignores);
         var sourceCoverage = new SourceCoverageValidator(sourceProperties.Select(property => property.Name).ToArray(),
@@ -203,7 +203,7 @@ internal sealed class MappingPlanner
         }
         else
         {
-            var constructor = SelectConstructor(method, targetType, sourceProperties, renames, ignores);
+            var constructor = SelectConstructor(method, targetType, sourceProperties, targetProperties, renames, ignores);
             if (constructor is null) { return null; }
             var usedNames = new HashSet<string>(targetProperties.Select(property => property.Name), StringComparer.OrdinalIgnoreCase);
             usedNames.UnionWith(constructor.Parameters.Select(parameter => parameter.Name));
@@ -218,9 +218,9 @@ internal sealed class MappingPlanner
                 var property = FindSource(parameter.Name, sourceProperties, renames);
                 if (property is null || ignores.Contains(parameter.Name)) { continue; }
                 consumed.Add(parameter.Name);
-                sourceCoverage.RecordMapped(property.Name);
-                arguments.Add(SymbolNames.Identifier(parameter.Name) + ": " + conversion.Convert(property.Type,
-                    parameter.Type, sourceName + "." + SymbolNames.Identifier(property.Name), parameter.Name));
+                sourceCoverage.RecordMapped(property.RootName);
+                arguments.Add(SymbolNames.Identifier(parameter.Name) + ": " + conversion.Convert(property.GetResultType(_compilation),
+                    parameter.Type, property.Access(sourceName), parameter.Name));
             }
 
             body.Append("return new ").Append(SymbolNames.Type(targetType)).AppendLine("(")
@@ -239,7 +239,7 @@ internal sealed class MappingPlanner
     }
 
     private void BuildProperties(StringBuilder body, IMethodSymbol method, IPropertySymbol[] sourceProperties,
-        IPropertySymbol[] targetProperties, Dictionary<string, string> renames, HashSet<string> ignores,
+        IPropertySymbol[] targetProperties, Dictionary<string, SourcePropertyPath> renames, HashSet<string> ignores,
         ConversionBuilder conversion, string sourceName, string? targetName, HashSet<string> consumed, bool constructorSetsRequired,
         SourceCoverageValidator sourceCoverage)
     {
@@ -277,32 +277,39 @@ internal sealed class MappingPlanner
                 continue;
             }
 
-            var expression = conversion.Convert(source.Type, target.Type,
-                sourceName + "." + SymbolNames.Identifier(source.Name), target.Name);
-            sourceCoverage.RecordMapped(source.Name);
+            var expression = conversion.Convert(source.GetResultType(_compilation), target.Type,
+                source.Access(sourceName), target.Name);
+            sourceCoverage.RecordMapped(source.RootName);
             body.Append(targetName is null ? "" : targetName + ".").Append(SymbolNames.Identifier(target.Name))
                 .Append(" = ").Append(expression).AppendLine(targetName is null ? "," : ";");
         }
     }
 
     private IMethodSymbol? SelectConstructor(IMethodSymbol method, INamedTypeSymbol target, IPropertySymbol[] source,
-        Dictionary<string, string> renames, HashSet<string> ignores)
+        IPropertySymbol[] targetProperties, Dictionary<string, SourcePropertyPath> renames, HashSet<string> ignores)
     {
         var viable = target.InstanceConstructors.Where(constructor => constructor.DeclaredAccessibility == Accessibility.Public &&
             constructor.Parameters.All(parameter => parameter.RefKind == RefKind.None &&
                 (parameter.IsOptional || (!ignores.Contains(parameter.Name) && FindSource(parameter.Name, source, renames) is not null))))
             .ToArray();
+        var readOnlyProperties = targetProperties.Where(property => !property.IsIndexer && !ignores.Contains(property.Name) &&
+            property.SetMethod?.DeclaredAccessibility != Accessibility.Public).ToArray();
+        var coveringConstructors = viable.Where(constructor => readOnlyProperties.All(property =>
+            constructor.Parameters.Any(parameter => string.Equals(parameter.Name, property.Name, StringComparison.OrdinalIgnoreCase) &&
+                FindSource(parameter.Name, source, renames) is not null))).ToArray();
+        // Keep the existing property diagnostics when no constructor can cover the read-only members.
+        if (coveringConstructors.Length > 0) { viable = coveringConstructors; }
         var parameterless = viable.FirstOrDefault(constructor => constructor.Parameters.Length == 0);
         if (parameterless is not null) { return parameterless; }
         if (viable.Length == 1) { return viable[0]; }
         Report(MappingDiagnostics.Constructor, method, viable.Length == 0
             ? $"Target '{target.Name}' has no public constructor with mappable parameters"
-            : $"Target '{target.Name}' has multiple mappable constructors and no public parameterless constructor");
+            : $"Target '{target.Name}' has multiple mappable constructors and no suitable public parameterless constructor");
         return null;
     }
 
     private void ReadConfiguration(IMethodSymbol method, IPropertySymbol[] source, INamedTypeSymbol target,
-        IPropertySymbol[] properties, Dictionary<string, string> renames, HashSet<string> ignores)
+        IPropertySymbol[] properties, Dictionary<string, SourcePropertyPath> renames, HashSet<string> ignores)
     {
         var targetNames = new HashSet<string>(properties.Select(property => property.Name), StringComparer.OrdinalIgnoreCase);
         if (!method.ReturnsVoid)
@@ -322,12 +329,17 @@ internal sealed class MappingPlanner
                 }
                 var sourceName = attribute.ConstructorArguments[0].Value as string;
                 var targetName = attribute.ConstructorArguments[1].Value as string;
-                if (sourceName is null || targetName is null || !source.Any(property => property.Name == sourceName) ||
+                if (sourceName is null || targetName is null ||
                     !targetNames.Contains(targetName) || renames.ContainsKey(targetName))
                 {
-                    Report(MappingDiagnostics.Configuration, method, "MapProperty requires existing source/target names and one configuration per target");
+                    Report(MappingDiagnostics.Configuration, method, "MapProperty requires a source property path, an existing direct target name, and one configuration per target");
                 }
-                else { renames.Add(targetName, sourceName); }
+                else
+                {
+                    var path = SourcePropertyPath.Resolve(source, sourceName, _cancellationToken, out var error);
+                    if (path is null) { Report(MappingDiagnostics.Configuration, method, error); }
+                    else { renames.Add(targetName, path); }
+                }
             }
             else if (name == "XBullet.EasyMapping.MapIgnoreTargetAttribute")
             {
@@ -359,11 +371,12 @@ internal sealed class MappingPlanner
         }
     }
 
-    private static IPropertySymbol? FindSource(string targetName, IPropertySymbol[] source, Dictionary<string, string> renames)
+    private static SourcePropertyPath? FindSource(string targetName, IPropertySymbol[] source, Dictionary<string, SourcePropertyPath> renames)
     {
-        if (renames.TryGetValue(targetName, out var sourceName)) { return source.FirstOrDefault(property => property.Name == sourceName); }
-        return source.FirstOrDefault(property => property.Name == targetName) ??
+        if (renames.TryGetValue(targetName, out var path)) { return path; }
+        var property = source.FirstOrDefault(property => property.Name == targetName) ??
             source.FirstOrDefault(property => string.Equals(property.Name, targetName, StringComparison.OrdinalIgnoreCase));
+        return property is null ? null : new SourcePropertyPath(property);
     }
 
     private bool HasCycle(IMethodSymbol method, HashSet<IMethodSymbol> visiting, HashSet<IMethodSymbol> visited)

@@ -1,8 +1,10 @@
 # Releases and versioning
 
-This document describes the release procedure for **1.1.2**, dated 2026-10-29.
+This document describes preparation of **1.2.0** as of 2026-10-29.
+The release is not published; its changelog entry remains `Unreleased` until the
+final release commit is ready.
 NuGet publication is complete only when the publishing workflow succeeds. The
-published **1.1.0** and **1.1.1** releases remain immutable. A `v<version>` tag and
+existing release tags and published package versions remain immutable. A `v<version>` tag and
 GitHub Release identify the tested source commit; NuGet publication completes after approval of
 the `nuget` deployment.
 
@@ -10,8 +12,8 @@ the `nuget` deployment.
 
 | Package | Version | Purpose |
 | --- | --- | --- |
-| XBullet.EasyMapping | 1.1.2 | Compiler generator, automatic approval discovery, MSBuild integration, and optional review helper |
-| XBullet.EasyMapping.Abstractions | 1.1.2 | Mapping declaration attributes and coverage options |
+| XBullet.EasyMapping | 1.2.0 | Compiler generator, nested source paths, automatic approval discovery, MSBuild integration, and optional review helper |
+| XBullet.EasyMapping.Abstractions | 1.2.0 | Mapping declaration attributes and coverage options |
 
 Both packages target .NET Standard 2.0 and use the [MIT license](../LICENSE).
 The generator is built against Roslyn 4.8; compiler scenarios use C# 12. Samples,
@@ -94,7 +96,7 @@ Each command must succeed. The two intentionally invalid fixture builds are chec
 by `Test-GeneratorDiagnostics.ps1`, which accepts only their expected error IDs and
 messages. Review changed snapshots; validation never approves model changes.
 
-Packages are written to `artifacts/packages/1.1.2/`. The pack script verifies their
+Packages are written to `artifacts/packages/1.2.0/`. The pack script verifies their
 contents before restoring and executing a fresh consumer, then tests the received/
 approved workflow. It never publishes anything.
 
@@ -124,7 +126,7 @@ Before publishing:
 4. Confirm ownership of both NuGet package IDs and configure a publishing identity
    with permission to publish them. Never store API keys in source control.
 5. Change the changelog's `Unreleased` label to the actual release date, commit it,
-   and rerun CI before creating the `v1.1.2` tag on the final release commit.
+   and rerun CI before creating the `v1.2.0` tag on the final release commit.
 6. Publish the GitHub Release for the tag, then review and approve the `nuget`
    deployment. The publishing workflow uploads the attributes package first,
    then the generator, and attaches the same verified packages to the release.
@@ -181,7 +183,7 @@ initial 1.1.0 release, whose first run pushed both packages before timing out.
 For a local dry run, download the validated CI packages and run:
 
 ```powershell
-./tools/Publish-Packages.ps1 -PackageDirectory <downloaded-package-directory> -Version 1.1.2 -Commit <full-tagged-commit-sha> -WhatIf
+./tools/Publish-Packages.ps1 -PackageDirectory <downloaded-package-directory> -Version 1.2.0 -Commit <full-tagged-commit-sha> -WhatIf
 ```
 
 The dry run validates the packages and reports the two planned pushes. It requests

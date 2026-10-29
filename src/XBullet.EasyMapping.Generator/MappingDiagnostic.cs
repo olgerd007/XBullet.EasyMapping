@@ -32,8 +32,17 @@ internal sealed class MappingDiagnostic : IEquatable<MappingDiagnostic>
 
     public MappingDiagnostic WithArguments(params string[] arguments) => new(this, arguments);
 
-    public Diagnostic ToDiagnostic() => Diagnostic.Create(
-        Descriptor, Location.Create(FilePath, Span, Lines), Arguments.Cast<object>().ToArray());
+    public Diagnostic ToDiagnostic(Compilation compilation, CancellationToken cancellationToken)
+    {
+        cancellationToken.ThrowIfCancellationRequested();
+        var tree = compilation.SyntaxTrees.FirstOrDefault(tree => tree.FilePath == FilePath);
+        // Reattach at the reporting boundary so the IDE can navigate to the source without
+        // retaining syntax trees or compilations in the cached mapping plan.
+        var location = tree is not null && Span.End <= tree.GetText(cancellationToken).Length
+            ? Location.Create(tree, Span)
+            : Location.Create(FilePath, Span, Lines);
+        return Diagnostic.Create(Descriptor, location, Arguments.Cast<object>().ToArray());
+    }
 
     public bool Equals(MappingDiagnostic? other) => other is not null &&
         Descriptor.Id == other.Descriptor.Id && FilePath == other.FilePath && Span == other.Span &&

@@ -25,13 +25,17 @@ public sealed class MappingGenerator : IIncrementalGenerator
             .Select(static (pair, _) => ModelApprovalVerifier.Verify(pair.Left, pair.Right))
             .WithTrackingName("MapperApproval");
 
+        context.RegisterSourceOutput(mappers.Where(static mapper => !mapper.Diagnostics.IsEmpty)
+            .Combine(context.CompilationProvider), static (productionContext, pair) =>
+        {
+            foreach (var diagnostic in pair.Left.Diagnostics)
+            {
+                productionContext.ReportDiagnostic(diagnostic.ToDiagnostic(pair.Right, productionContext.CancellationToken));
+            }
+        });
+
         context.RegisterSourceOutput(mappers, static (productionContext, mapper) =>
         {
-            foreach (var diagnostic in mapper.Diagnostics)
-            {
-                productionContext.ReportDiagnostic(diagnostic.ToDiagnostic());
-            }
-
             if (mapper.Source.Length > 0)
             {
                 productionContext.AddSource(mapper.HintName, SourceText.From(mapper.Source, Encoding.UTF8));

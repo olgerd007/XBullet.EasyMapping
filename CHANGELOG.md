@@ -1,5 +1,22 @@
 # Changelog
 
+## 1.2.0 — Unreleased
+
+- Support dot-separated source paths in `MapProperty` for flattening nested
+  properties into target properties and constructor parameters, including updates.
+  Nullable intermediate references and structs propagate null; leaf conversions
+  retain the existing conversion and collection-copy rules.
+- Validate each source path segment and count its root toward strict source
+  coverage. Changing the configured path requires model-shape approval when enabled.
+- Prefer constructors that cover non-ignored properties without public setters,
+  including inherited properties and renamed source members. Keep parameterless
+  construction preferred when it can cover the target.
+- Attach diagnostics to the current source tree for IDE navigation, and include
+  mapping names and actionable guidance in missing-source and conversion errors.
+- Add regression coverage for repeated nested types, constructor selection,
+  diagnostic locations, and nested source paths.
+- Pin repository restores to nuget.org to avoid machine-level feed conflicts.
+
 ## 1.1.2 — 2026-10-29
 
 - Qualify static and instance converter calls so mapping parameters cannot shadow them,

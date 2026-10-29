@@ -104,6 +104,18 @@ organize folders.
 - Make message consumers idempotent and acknowledge messages only after required
   processing succeeds. Consider inbox/outbox patterns when consistency requires them.
 
+## Git Branch Naming
+
+- Name new branches by the purpose of the work: `feature/<description>` for
+  features, `bugfix/<description>` for bug fixes, `hotfix/<description>` for
+  urgent fixes, `refactor/<description>` for refactoring, `docs/<description>`
+  for documentation, `test/<description>` for tests, and `chore/<description>`
+  for maintenance.
+- Use short, descriptive, lowercase names with hyphens between words, such as
+  `feature/nested-mapping` or `bugfix/nullable-address`.
+- Do not use the `codex/` prefix. Follow an explicitly requested branch name
+  when the user provides one.
+
 ## Development Workflow
 
 1. Inspect the existing code, instructions, tests, and working-tree changes.
