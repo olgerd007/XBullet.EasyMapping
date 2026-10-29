@@ -1,12 +1,1 @@
 #nullable enable
-XBullet.EasyMapping.MapConstantAttribute
-XBullet.EasyMapping.MapConstantAttribute.MapConstantAttribute(string! target, object? value) -> void
-XBullet.EasyMapping.MapConstantAttribute.Target.get -> string!
-XBullet.EasyMapping.MapConstantAttribute.Value.get -> object?
-XBullet.EasyMapping.MapGeneratedValueAttribute
-XBullet.EasyMapping.MapGeneratedValueAttribute.MapGeneratedValueAttribute(string! target) -> void
-XBullet.EasyMapping.MapGeneratedValueAttribute.Target.get -> string!
-XBullet.EasyMapping.MapGeneratedValueAttribute.Use.get -> string?
-XBullet.EasyMapping.MapGeneratedValueAttribute.Use.set -> void
-XBullet.EasyMapping.MapPropertyAttribute.Use.get -> string?
-XBullet.EasyMapping.MapPropertyAttribute.Use.set -> void
