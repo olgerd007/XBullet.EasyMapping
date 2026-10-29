@@ -1,5 +1,17 @@
 # Changelog
 
+## 1.1.2 — 2026-10-29
+
+- Qualify static and instance converter calls so mapping parameters cannot shadow them,
+  including nullable conversions, collection elements, and existing-target updates.
+- Reject file-local mapper classes with source-located EMAP001 instead of emitting
+  an implementation that cannot complete the original declaration.
+- Include enum underlying types in model approvals, including nested enums, so changes
+  such as `int` to `long` require review even when enum values stay the same.
+  Existing approvals containing enums require one reviewed refresh to add the
+  `underlying` line. The v1 text format and approvals without enums are unchanged.
+- Refresh the package README with published-feed installation and a complete example.
+
 ## 1.1.1 — 2026-10-28
 
 - Remove identity LINQ projections when copying collection elements.

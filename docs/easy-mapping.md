@@ -1,19 +1,39 @@
-# EasyMapping 1.1.0: generated DTO mappings
+# EasyMapping: generated DTO mappings
 
 EasyMapping generates C# implementations of typed partial methods during compilation.
 It owns its generator and does not delegate to AutoMapper, Mapperly, or Facet. The
 initial implementation focuses on DTO transformations; EF projections are deferred.
 
-Version 1.1.0 is being prepared for release and is currently built locally. It is not an API-compatible
-replacement for every AutoMapper feature. The sample targets .NET 10; compiler tests
-use Roslyn 4.8 and C# 12. The generator and attribute libraries target .NET Standard
-2.0 so the compiler tooling is independent of the application's target framework.
-Other consumer frameworks and compiler hosts have not been validated yet.
+Published packages are available from [NuGet](https://www.nuget.org/packages/XBullet.EasyMapping).
+EasyMapping is not an API-compatible replacement for every AutoMapper feature.
+Consumer builds are tested with the .NET 10 SDK; compiler tests use Roslyn 4.8 and
+C# 12. The generator and attribute libraries target .NET Standard 2.0 so compiler
+tooling is independent of the application's target framework. Other consumer
+frameworks and compiler hosts have not been validated yet.
 
-## Declare a mapper
+## Install and run
+
+Create a console application with the .NET 10 SDK and install the latest published
+package from NuGet:
+
+```shell
+dotnet new console --framework net10.0 --name EasyMappingDemo
+cd EasyMappingDemo
+dotnet add package XBullet.EasyMapping
+```
+
+The package includes the generator and its configuration attributes. No mapper
+registration or runtime mapping service is needed. Replace `Program.cs` with:
 
 ```csharp
+using System;
+using System.Collections.Generic;
 using XBullet.EasyMapping;
+
+var source = new PersonInput(42, "Ada", ["original"]);
+var dto = PersonMappings.ToDto(source);
+source.Tags!.Add("changed after mapping");
+Console.WriteLine($"{dto.Id}: {dto.DisplayName} ({string.Join(", ", dto.Tags!)})");
 
 public sealed record PersonInput(int Id, string Name, List<string>? Tags);
 public sealed record PersonDto(int Id, string DisplayName, List<string>? Tags);
@@ -22,15 +42,19 @@ public sealed record PersonDto(int Id, string DisplayName, List<string>? Tags);
 public static partial class PersonMappings
 {
     [MapProperty(nameof(PersonInput.Name), nameof(PersonDto.DisplayName))]
-    public static partial PersonDto? ToDto(PersonInput? source);
+    public static partial PersonDto ToDto(PersonInput source);
 }
-
 ```
 
-Call it with `PersonMappings.ToDto(input)`.
+Run `dotnet run`. The output is `42: Ada (original)`: the mapped list has its own
+container, so the later source mutation does not change the DTO.
 
-Use a top-level, non-generic partial class. Both static mappers and instance mappers
-are supported. Instance mapper constructors and dependencies remain normal C#.
+## Declare a mapper
+
+Use a top-level, non-generic partial class without the `file` modifier. Generated
+source cannot complete a file-local class from another file; these declarations
+produce EMAP001. Both static mappers and instance mappers are supported. Instance
+mapper constructors and dependencies remain normal C#.
 Source and destination DTOs do not need mapping annotations.
 
 Generated methods use direct constructors, initializers, assignments, and collection
@@ -124,8 +148,6 @@ Approval is disabled by default and is independent of coverage. Enabling it requ
 one readable baseline per mapper, named with its fully qualified mapper name, for
 example `MappingComparison.EasyMapping.PersonMappings.mapper.approved.txt`.
 The generic filename suffixes are `.mapper.approved.txt` and `.mapper.received.txt`.
-When migrating an existing baseline, rename the file; its contents do not change
-and do not need to be reapproved.
 By default, approval files sit beside the source file containing `[Mapper]`. The
 package automatically includes `*.mapper.approved.txt` files throughout the project
 as compiler `AdditionalFiles`, so no project glob is needed. It also includes
@@ -143,10 +165,19 @@ The baseline contains deterministic text describing generated mapping signatures
 coverage, mapping attributes, and reachable custom model shapes. Shapes include
 public instance properties (also ignored and inherited properties), types and
 nullability, getter/setter accessibility, init/required flags, public constructor
-parameters and their defaults, public fields/constants, enum values, base/interface
-identities, and application attributes. Property ordering and OS line endings do
+parameters and their defaults, public fields/constants, enum underlying types and
+values, base/interface identities, and application attributes. Property ordering and OS line endings do
 not create approval changes. Recursive generic definitions are bounded by their
 definition identity rather than expanded indefinitely.
+
+Starting with 1.1.2, enum shapes include their actual underlying type: `byte`,
+`sbyte`, `short`, `ushort`, `int`, `uint`, `long`, or `ulong`. For example,
+`enum Status : byte` records `underlying byte`; an enum without an explicit
+underlying type records `underlying int`. Changing the underlying type requires
+approval even when enum values are unchanged. When upgrading from an earlier version, existing
+approvals containing enums fail with EMAP011 once: review the new received file
+and replace the approved baseline using the workflow below. Approvals without
+enums and the v1 text-format header remain unchanged.
 
 Framework types are opaque leaves, with generic arguments still inspected. Compiler
 implementation attributes, private state, method/constructor bodies, and property
@@ -340,22 +371,20 @@ repository README. Inspect emitted source in
 under `docs/evidence/generated/EasyMapping/`.
 
 `tools/Test-Package.ps1` packs `XBullet.EasyMapping` and
-`XBullet.EasyMapping.Abstractions` into `artifacts/packages/1.1.0`, verifies package
-metadata, MIT license, README, dependency versions, and compiler integration assets, then restores an isolated
-consumer from that local feed, and executes it. The smoke consumer is deliberately
+`XBullet.EasyMapping.Abstractions` into `artifacts/packages/<version>`, using the
+version from `Directory.Build.props`. It verifies package metadata, MIT license,
+README, dependency versions, and compiler integration assets, then restores and
+executes an isolated consumer from that local feed. The smoke consumer is deliberately
 outside the solution so an ordinary solution restore does not need unpublished
 packages to exist first. Each smoke run uses a fresh cache to prevent stale package
 contents from making the test pass.
-
-Install the locally built generator package in a consumer with:
-
-```xml
-<PackageReference Include="XBullet.EasyMapping" Version="1.1.0" />
-```
 
 The package carries the generator under `analyzers/dotnet/cs` and a dependency on
 the configuration attributes. Roslyn is a private compiler dependency and is not
 shipped as a consumer runtime library. No package is published by the smoke script.
 
-Until the release is published, use `artifacts/packages/1.1.0` as the local NuGet
-source. The package includes its MIT license and a source repository/commit link.
+For repository development, install a locally packed candidate with
+`dotnet add package XBullet.EasyMapping --version <version> --source <absolute-package-directory>`.
+Use the version and directory produced by `tools/Test-Package.ps1`. This local-feed
+workflow is separate from installing the published package above. The package
+includes its MIT license and a source repository/commit link.

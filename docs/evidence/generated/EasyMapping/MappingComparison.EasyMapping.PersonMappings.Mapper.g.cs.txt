@@ -16,7 +16,7 @@ namespace MappingComparison.EasyMapping {
             return new global::MappingComparison.Contracts.PersonDto(
                 @Id: @source.@Id,
                 @DisplayName: @source.@Name,
-                @Address: (@source.@Address is { } __mapperValue0 ? @MapAddress(__mapperValue0) : default(global::MappingComparison.Contracts.AddressDto?)),
+                @Address: (@source.@Address is { } __mapperValue0 ? global::MappingComparison.EasyMapping.PersonMappings.@MapAddress(__mapperValue0) : default(global::MappingComparison.Contracts.AddressDto?)),
                 @Tags: (@source.@Tags is { } __mapperValue1 ? global::System.Linq.Enumerable.ToList(__mapperValue1) : default(global::System.Collections.Generic.List<string>?)),
                 @PreviousAddresses: (@source.@PreviousAddresses is { } __mapperValue3 ? __mapperValue5(__mapperValue3) : default(global::System.Collections.Generic.List<global::MappingComparison.Contracts.AddressDto>?))
             ) {
@@ -24,7 +24,7 @@ namespace MappingComparison.EasyMapping {
             static global::System.Collections.Generic.List<global::MappingComparison.Contracts.AddressDto> __mapperValue5(global::System.Collections.Generic.List<global::MappingComparison.Contracts.AddressInput> __mapperValue6) {
                 var __mapperValue7 = new global::System.Collections.Generic.List<global::MappingComparison.Contracts.AddressDto>(__mapperValue6.Count);
                 foreach (var __mapperValue4 in __mapperValue6) {
-                    __mapperValue7.Add(@MapAddress(__mapperValue4));
+                    __mapperValue7.Add(global::MappingComparison.EasyMapping.PersonMappings.@MapAddress(__mapperValue4));
                 }
                 return __mapperValue7;
             }

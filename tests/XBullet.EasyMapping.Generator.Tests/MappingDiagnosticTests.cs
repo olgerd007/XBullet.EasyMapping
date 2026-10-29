@@ -8,6 +8,7 @@ public sealed class MappingDiagnosticTests
     [Theory]
     [InlineData("EMAP001", "public class Outer { [Mapper] public static partial class Nested {} }")]
     [InlineData("EMAP001", "[Mapper] public partial class Generic<T> {}")]
+    [InlineData("EMAP001", "[Mapper] file static partial class M { public static partial Output Map(Input source); }")]
     [InlineData("EMAP002", "[Mapper] public static partial class M { public static partial Output Map<T>(Input input); }")]
     [InlineData("EMAP003", "[Mapper] public static partial class M { public static partial Output Map(Input input); }")]
     [InlineData("EMAP006", "[Mapper] public static partial class M { [MapProperty(\"Absent\", \"Missing\")] public static partial Output Map(Input input); }")]

@@ -25,10 +25,10 @@ internal sealed class MappingPlanner
     {
         _cancellationToken.ThrowIfCancellationRequested();
         var declarations = _mapper.DeclaringSyntaxReferences.Select(reference => reference.GetSyntax(_cancellationToken)).ToArray();
-        if (_mapper.TypeKind != TypeKind.Class || _mapper.IsRecord || _mapper.Arity != 0 || _mapper.ContainingType is not null ||
+        if (_mapper.TypeKind != TypeKind.Class || _mapper.IsRecord || _mapper.IsFileLocal || _mapper.Arity != 0 || _mapper.ContainingType is not null ||
             declarations.Any(declaration => declaration is not ClassDeclarationSyntax type || !type.Modifiers.Any(SyntaxKind.PartialKeyword)))
         {
-            Report(MappingDiagnostics.Mapper, _mapper, "Use a top-level, non-generic partial class for a mapper");
+            Report(MappingDiagnostics.Mapper, _mapper, "Use a top-level, non-generic partial class without the file modifier for a mapper");
             return Result("");
         }
 
