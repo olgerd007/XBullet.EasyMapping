@@ -1,4 +1,1 @@
 #nullable enable
-XBullet.EasyMapping.MapPropertyAttribute.MapPropertyAttribute(string! target) -> void
-XBullet.EasyMapping.MapPropertyAttribute.Sources.get -> string![]?
-XBullet.EasyMapping.MapPropertyAttribute.Sources.set -> void
