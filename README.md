@@ -15,7 +15,7 @@ Version **1.2.0** adds nested source paths, constructor
 selection improvements, and navigable mapping diagnostics.
 Version **1.3.0** adds explicit converters, constant and generated
 target values, and nested target paths for creation and updates.
-Version **1.4.0** is being prepared with whole-source helpers and explicit
+Version **1.4.0** adds whole-source helpers and explicit
 `Sources` declarations for strict source coverage.
 See the [release guide](docs/release.md),
 [release notes](CHANGELOG.md), and [MIT license](LICENSE).

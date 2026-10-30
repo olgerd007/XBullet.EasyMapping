@@ -1,6 +1,6 @@
 # Changelog
 
-## 1.4.0 — Unreleased
+## 1.4.0 — 2026-10-30
 
 - Add a target-only `MapProperty(target, Use = nameof(Helper))` overload that
   passes the whole source to a custom helper. Support creation, updates, nested

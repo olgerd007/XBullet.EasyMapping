@@ -1,7 +1,6 @@
 # Releases and versioning
 
-This document describes preparation of **1.4.0**, started on 2026-10-30.
-The candidate has not been published; its changelog remains marked `Unreleased`.
+This document describes the release procedure for **1.4.0**, dated 2026-10-30.
 NuGet publication is complete only when the publishing workflow succeeds. The
 existing release tags and published package versions remain immutable. A `v<version>` tag and
 GitHub Release identify the tested source commit; NuGet publication completes after approval of
@@ -68,8 +67,8 @@ coverage totals. Coverage is a regression gate alongside semantic tests.
 
 Local Windows validation for the 1.4.0 candidate passed all 536 generator tests
 and 94 comparison tests. Release coverage measured 99.71% lines / 97.23% branches
-for the generator and 100% lines / branches for the attributes. GitHub Actions
-validation on Windows and Ubuntu is still required for the final release commit.
+for the generator and 100% lines / branches for the attributes. The final release
+commit must also pass GitHub Actions validation on Windows and Ubuntu.
 
 ## Local validation
 
