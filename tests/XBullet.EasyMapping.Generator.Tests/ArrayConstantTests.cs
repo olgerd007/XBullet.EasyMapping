@@ -26,7 +26,7 @@ public sealed class ArrayConstantTests
         void Report(DiagnosticDescriptor descriptor, string[] arguments) => Assert.Fail(string.Join("; ", arguments));
         var conversions = new ConversionBuilder(compilation, method, [], [], Report);
         var coverage = new SourceCoverageValidator([], method, false, Report);
-        var values = new MappingValueBuilder(compilation, conversions, coverage, "source", "Map", Report);
+        var values = new MappingValueBuilder(compilation, conversions, coverage, "source", method.Parameters[0].Type, "Map", Report);
         var target = Assert.Single(compilation.GetTypeByMetadataName("OrderDto")!.GetMembers("Labels").OfType<IPropertySymbol>());
 
         var expression = values.Build(PropertyMapping.ForConstant(constant), target.Type, "Labels");

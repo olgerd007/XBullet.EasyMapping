@@ -1,5 +1,13 @@
 # Changelog
 
+## Unreleased
+
+- Add a target-only `MapProperty(target, Use = nameof(Helper))` overload that
+  passes the whole source to a custom helper. Support creation, updates, nested
+  targets, and constructor/required-member initialization. Declare consumed source
+  root properties with `Sources` to satisfy strict source coverage without ignores.
+  Validate declarations and include them in model-shape approvals.
+
 ## 1.3.0 — 2026-10-30
 
 - Select source converters explicitly with `MapProperty.Use`, including nullable
