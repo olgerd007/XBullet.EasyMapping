@@ -57,6 +57,21 @@ public sealed class AttributeContractTests
     }
 
     [Fact]
+    public void Target_only_property_attributes_preserve_the_target_and_helper_without_a_source_path()
+    {
+        var property = new MapPropertyAttribute("AdviserCompany") { Use = "MapAdviserCompany" };
+
+        Assert.Equal("AdviserCompany", property.Target);
+        Assert.Equal(string.Empty, property.Source);
+        Assert.Equal("MapAdviserCompany", property.Use);
+        Assert.Null(property.Sources);
+
+        property.Sources = ["CompanyName", "CompanyStatus"];
+
+        Assert.Equal(new[] { "CompanyName", "CompanyStatus" }, property.Sources);
+    }
+
+    [Fact]
     public void Value_attributes_preserve_the_target_constant_and_helper_name()
     {
         var constant = new MapConstantAttribute("SourceSystem", "orders");

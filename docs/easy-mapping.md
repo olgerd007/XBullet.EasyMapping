@@ -170,6 +170,7 @@ property such as `Customer.Version` produces EMAP003 naming that full path.
 | `MapProperty("Customer.Name", "CustomerName")` | Consumes the root `Customer` | Covers `CustomerName` |
 | `MapProperty("CustomerName", "Customer.Name")` | Consumes `CustomerName` | Covers `Customer.Name`; other child members still need configuration |
 | `MapProperty(..., Use = nameof(ConvertName))` | Consumes the selected source root | Covers the selected target; helper internals are not inspected |
+| `MapProperty("FullName", Use = nameof(BuildName), Sources = new[] { "FirstName", "LastName" })` | Consumes the declared source roots | Covers the selected target using the whole source; helper internals are not inspected |
 | `MapConstant` / `MapGeneratedValue` | Consumes nothing | Covers the configured target |
 | `MapIgnoreSource("Name")` | Acknowledges an unused source root | Covers nothing |
 | `MapIgnoreTarget("Customer.Version")` | Consumes nothing | Acknowledges the omitted target leaf |
@@ -440,13 +441,71 @@ private static OrderStatus MapCustomerStatus(Customer? customer) =>
     customer?.Status ?? OrderStatus.Pending;
 ```
 
-The helper receives the selected source value, or the leaf value when a nested
-source path is used. Selecting the whole object lets the helper check runtime
+With the source-and-target overload, the helper receives the selected source
+value, or the leaf value when a nested source path is used. Selecting the whole
+object lets the helper check runtime
 nulls before reading its members, including when a legacy source property lacks
 a nullable annotation. The helper is called for null values too; its parameter
 must accept null when the source path is nullable. Nullable helper results require
 nullable targets. Collection helpers receive the whole collection, not individual
 elements.
+
+To compute a target value from several source properties, use the target-only
+overload. Its `Use` helper receives the whole source object:
+
+```csharp
+[MapProperty(
+    nameof(AdviserAmendmentServiceRequest.AdviserCompany),
+    Use = nameof(MapAdviserCompany),
+    Sources = new[]
+    {
+        nameof(ServiceRequestEntity.AdviserCompanyIsChanged),
+        nameof(ServiceRequestEntity.AdviserCompanyValue),
+        nameof(ServiceRequestEntity.AdviserCompanyApprovalStatus)
+    })]
+public static partial AdviserAmendmentServiceRequest Map(ServiceRequestEntity source);
+
+private static AdviserCompanyFieldChange MapAdviserCompany(ServiceRequestEntity source)
+{
+    return new AdviserCompanyFieldChange
+    {
+        IsChanged = source.AdviserCompanyIsChanged,
+        Value = source.AdviserCompanyValue,
+        ApprovalStatus = source.AdviserCompanyApprovalStatus
+    };
+}
+```
+
+The target-only overload requires a non-empty `Use` name. It supports target paths
+and constructor parameters as well as direct properties; no `MapIgnoreTarget` is
+needed. Creation supplies the helper result during construction, including `init`
+and required properties. Updates replace the configured member with the helper
+result. Each configured whole-source helper is evaluated once per target per
+mapping call; constructor and required-member initialization reuse that result.
+Normal root null handling happens first: a nullable root/result mapping returns
+null without invoking the helper, and other null reference roots throw. A nullable
+value-type root is unwrapped before it is passed to the helper. The helper's input
+must match the non-null root type, optionally accepting null as well.
+
+The optional `Sources` array declares which source root properties the helper
+consumes. Those properties count as mapped under `MappingCoverage.Both`, so the
+example accounts for all three inputs without `MapIgnoreSource`. Other source
+properties still need a mapping or an explicit ignore. Without `Sources`, or with
+an empty array, the whole-source binding consumes no individual source properties.
+The generator does not inspect helper bodies or automatically mark every source
+property as used; declarations describe intended use rather than prove it.
+
+`Sources` is supported only by the target-only overload with `Use`. Entries must
+be exact names of public readable instance source root properties, preferably
+written with `nameof`; inherited properties are supported. Nested paths, null
+arrays or entries, invalid names, and duplicate entries within one binding produce
+EMAP006, even in target-only coverage mode. A declared source cannot also be
+ignored, but may supply other generated assignments or several helpers. Changing
+the declarations participates in model-shape approval. Declaring a property does
+not generate a read of its getter.
+
+The `Source` property of a target-only attribute is an empty string when attributes
+are preserved for runtime inspection.
 
 `Use` must name a synchronous, non-generic, single-input method in the same mapper
 with no `ref`/`out` parameter, by-reference result, or `dynamic` parameter/result.
@@ -464,9 +523,10 @@ is no fallback to automatic conversion for an invalid explicit binding.
 Every helper name referenced by `Use`, including all overloads of that name, is
 excluded from automatic converter discovery throughout that mapper. Bind it
 explicitly on each member that needs it. Other automatic helpers and mappings
-without any `Use` configuration retain their existing behavior. The bound source
-still counts toward strict coverage, and helper-name changes participate in model
-approval; helper method bodies remain outside the model-shape snapshot.
+without any `Use` configuration retain their existing behavior. A source property
+selected by the two-argument overload still counts toward strict coverage, and
+helper-name changes participate in model approval; helper method bodies remain
+outside the model-shape snapshot.
 
 Generated mapping dependency cycles are rejected before runtime. Reference tracking,
 automatic graph truncation, and arbitrary cyclic graphs are not supported. Explicit

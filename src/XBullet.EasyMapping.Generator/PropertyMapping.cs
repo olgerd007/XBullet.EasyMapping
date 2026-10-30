@@ -18,6 +18,23 @@ internal sealed class PropertyMapping
 
     private PropertyMapping(TargetMappingScope nestedTarget) => NestedTarget = nestedTarget;
 
+    private PropertyMapping(string use, string[] consumedSources)
+    {
+        Use = use;
+        ConsumedSources = consumedSources;
+        UsesWholeSource = true;
+    }
+
+    public bool UsesWholeSource
+    {
+        get;
+    }
+
+    public string[] ConsumedSources
+    {
+        get;
+    } = [];
+
     public SourcePropertyPath? Source
     {
         get;
@@ -43,4 +60,6 @@ internal sealed class PropertyMapping
     public static PropertyMapping ForGeneratedValue(string use) => new((TypedConstant?)null, use);
 
     public static PropertyMapping ForNestedTarget(TargetMappingScope target) => new(target);
+
+    public static PropertyMapping ForWholeSource(string use, string[] consumedSources) => new(use, consumedSources);
 }

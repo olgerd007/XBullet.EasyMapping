@@ -238,7 +238,7 @@ internal sealed class MappingPlanner
             sourceName = local;
         }
 
-        var values = new MappingValueBuilder(_compilation, conversion, sourceCoverage, sourceName, method.Name,
+        var values = new MappingValueBuilder(_compilation, conversion, sourceCoverage, sourceName, sourceType, method.Name,
             (descriptor, arguments) => Report(descriptor, method, arguments));
         var mappingBody = new StringBuilder();
         if (method.ReturnsVoid)
@@ -402,31 +402,42 @@ internal sealed class MappingPlanner
             var name = attribute.AttributeClass?.ToDisplayString();
             if (name == "XBullet.EasyMapping.MapPropertyAttribute")
             {
-                if (attribute.ConstructorArguments.Length != 2)
+                if (attribute.ConstructorArguments.Length is not (1 or 2))
                 {
-                    Report(MappingDiagnostics.Configuration, method, "MapProperty requires source and target names");
+                    Report(MappingDiagnostics.Configuration, method, "MapProperty requires source and target names, or a target name with Use");
                     continue;
                 }
 
-                var sourceName = attribute.ConstructorArguments[0].Value as string;
-                var targetName = attribute.ConstructorArguments[1].Value as string;
+                var wholeSource = attribute.ConstructorArguments.Length == 1;
+                var sourceName = wholeSource ? null : attribute.ConstructorArguments[0].Value as string;
+                var targetName = attribute.ConstructorArguments[wholeSource ? 0 : 1].Value as string;
                 var useArgument = attribute.NamedArguments.FirstOrDefault(argument => argument.Key == "Use");
                 var use = useArgument.Value.Value as string;
-                if (useArgument.Key is not null && string.IsNullOrWhiteSpace(use))
+                if ((wholeSource || useArgument.Key is not null) && string.IsNullOrWhiteSpace(use))
                 {
                     Report(MappingDiagnostics.Configuration, method,
                         $"MapProperty.Use for target '{targetName}' in mapping '{method.Name}' requires a non-empty helper name; use nameof to reference a method in this mapper");
                     continue;
                 }
 
-                if (sourceName is null || targetName is null ||
+                var consumedSources = ReadConsumedSources(attribute, method, source, wholeSource);
+                if (consumedSources is null)
+                {
+                    continue;
+                }
+
+                if ((!wholeSource && sourceName is null) || targetName is null ||
                     !IsTargetPath(targetName, targetNames) || renames.ContainsKey(targetName))
                 {
                     Report(MappingDiagnostics.Configuration, method, $"MapProperty target path '{targetName}' must contain non-empty property names, start at an existing target property or constructor parameter, and have one configuration per target");
                 }
+                else if (wholeSource)
+                {
+                    renames.Add(targetName, PropertyMapping.ForWholeSource(use!, consumedSources));
+                }
                 else
                 {
-                    var path = SourcePropertyPath.Resolve(source, sourceName, _cancellationToken, out var error);
+                    var path = SourcePropertyPath.Resolve(source, sourceName!, _cancellationToken, out var error);
                     if (path is null)
                     {
                         Report(MappingDiagnostics.Configuration, method, error);
@@ -498,6 +509,41 @@ internal sealed class MappingPlanner
                 break;
             }
         }
+    }
+
+    private string[]? ReadConsumedSources(AttributeData attribute, IMethodSymbol method, IPropertySymbol[] source, bool wholeSource)
+    {
+        var argument = attribute.NamedArguments.FirstOrDefault(item => item.Key == "Sources");
+        if (argument.Key is null)
+        {
+            return [];
+        }
+
+        if (!wholeSource)
+        {
+            Report(MappingDiagnostics.Configuration, method, "MapProperty.Sources is only supported by the target-only overload with Use");
+            return null;
+        }
+
+        if (argument.Value.Kind != TypedConstantKind.Array || argument.Value.IsNull)
+        {
+            Report(MappingDiagnostics.Configuration, method, "MapProperty.Sources requires a non-null array of readable source root property names");
+            return null;
+        }
+
+        var names = new HashSet<string>(StringComparer.Ordinal);
+        foreach (var item in argument.Value.Values)
+        {
+            _cancellationToken.ThrowIfCancellationRequested();
+            if (item.Value is not string name || !source.Any(property => property.Name == name) || !names.Add(name))
+            {
+                Report(MappingDiagnostics.Configuration, method,
+                    $"MapProperty.Sources entry '{item.Value}' in mapping '{method.Name}' must name an existing readable source root property exactly and cannot be repeated within one binding");
+                return null;
+            }
+        }
+
+        return names.ToArray();
     }
 
     private static bool IsTargetPath(string path, HashSet<string> names)
