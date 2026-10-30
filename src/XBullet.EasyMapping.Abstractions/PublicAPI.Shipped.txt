@@ -16,7 +16,10 @@ XBullet.EasyMapping.MapIgnoreTargetAttribute.MapIgnoreTargetAttribute(string! ta
 XBullet.EasyMapping.MapIgnoreTargetAttribute.Target.get -> string!
 XBullet.EasyMapping.MapPropertyAttribute
 XBullet.EasyMapping.MapPropertyAttribute.MapPropertyAttribute(string! source, string! target) -> void
+XBullet.EasyMapping.MapPropertyAttribute.MapPropertyAttribute(string! target) -> void
 XBullet.EasyMapping.MapPropertyAttribute.Source.get -> string!
+XBullet.EasyMapping.MapPropertyAttribute.Sources.get -> string![]?
+XBullet.EasyMapping.MapPropertyAttribute.Sources.set -> void
 XBullet.EasyMapping.MapPropertyAttribute.Target.get -> string!
 XBullet.EasyMapping.MapPropertyAttribute.Use.get -> string?
 XBullet.EasyMapping.MapPropertyAttribute.Use.set -> void
