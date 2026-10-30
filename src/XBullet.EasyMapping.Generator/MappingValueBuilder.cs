@@ -9,17 +9,19 @@ internal sealed class MappingValueBuilder
     private readonly ConversionBuilder _conversion;
     private readonly SourceCoverageValidator _coverage;
     private readonly string _sourceName;
+    private readonly ITypeSymbol _sourceType;
     private readonly string _methodName;
     private readonly Action<DiagnosticDescriptor, string[]> _report;
     private readonly Dictionary<string, string> _generatedLocals = new(StringComparer.OrdinalIgnoreCase);
 
     public MappingValueBuilder(Compilation compilation, ConversionBuilder conversion, SourceCoverageValidator coverage,
-        string sourceName, string methodName, Action<DiagnosticDescriptor, string[]> report)
+        string sourceName, ITypeSymbol sourceType, string methodName, Action<DiagnosticDescriptor, string[]> report)
     {
         _compilation = compilation;
         _conversion = conversion;
         _coverage = coverage;
         _sourceName = sourceName;
+        _sourceType = sourceType;
         _methodName = methodName;
         _report = report;
     }
@@ -30,6 +32,16 @@ internal sealed class MappingValueBuilder
 
     public string Build(PropertyMapping mapping, ITypeSymbol target, string member)
     {
+        if (mapping.UsesWholeSource)
+        {
+            foreach (var sourceName in mapping.ConsumedSources)
+            {
+                _coverage.RecordMapped(sourceName);
+            }
+
+            return Cache(member, _conversion.Convert(_sourceType, target, _sourceName, member, mapping.Use));
+        }
+
         if (mapping.Source is { } source)
         {
             _coverage.RecordMapped(source.RootName);

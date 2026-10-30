@@ -4,6 +4,9 @@ coverage Both
 mapping static global::PersonDto Map(None global::PersonInput source nullable=NotAnnotated)
   attribute global::XBullet.EasyMapping.MapIgnoreSourceAttribute("InternalNote")
   attribute global::XBullet.EasyMapping.MapPropertyAttribute("Name", "DisplayName")
+mapping static global::PersonDto MapWithWholeSource(None global::PersonInput source nullable=NotAnnotated)
+  attribute global::XBullet.EasyMapping.MapIgnoreSourceAttribute("InternalNote")
+  attribute global::XBullet.EasyMapping.MapPropertyAttribute("DisplayName", Sources=["Id", "Name"], Use="FormatDisplayName")
 model global::PersonDto kind=Class record=True readonly=False abstract=False sealed=True
   base object
   interface global::System.IEquatable<global::PersonDto>

@@ -15,6 +15,8 @@ Version **1.2.0** adds nested source paths, constructor
 selection improvements, and navigable mapping diagnostics.
 Version **1.3.0** adds explicit converters, constant and generated
 target values, and nested target paths for creation and updates.
+Version **1.4.0** adds whole-source helpers and explicit
+`Sources` declarations for strict source coverage.
 See the [release guide](docs/release.md),
 [release notes](CHANGELOG.md), and [MIT license](LICENSE).
 
@@ -39,6 +41,8 @@ existing-target updates are supported. Null collections remain null; collection
 containers are copied. Missing target mappings and unsafe conversions are errors.
 `MapProperty.Use` explicitly selects a source converter; `MapConstant` and
 `MapGeneratedValue` supply [fixed or generated target values](docs/easy-mapping.md#constant-and-generated-values).
+The target-only `MapProperty(target, Use = nameof(Helper))` overload passes the
+whole source to a helper; `Sources` declares the root properties it consumes.
 Dot-separated target paths build or update nested children, and array constants
 produce fresh arrays for each target and call.
 [`MappingCoverage.Both`](docs/easy-mapping.md#strict-coverage-of-both-models) also
@@ -147,17 +151,17 @@ dependencies are centralized and solution project resolutions are recorded in lo
 files. Sample projects are non-packable.
 
 Run `./tools/Test-Package.ps1` to build both NuGet packages into
-`artifacts/packages/1.3.0`, verify their metadata/license/assets, and execute an
+`artifacts/packages/1.4.0`, verify their metadata/license/assets, and execute an
 isolated consumer using that local feed. The version comes from
 `Directory.Build.props`; the smoke consumer uses the same version through central
 package management. Each run uses a fresh cache.
 
-CI is configured to verify Release builds, all 568 tests, formatting, documentation links,
+CI is configured to verify Release builds, all 630 tests, formatting, documentation links,
 diagnostics, model approvals, generated evidence, and packaged consumption on
 Windows and Ubuntu. Test results are retained even on failure; a successful
 Windows job also retains the verified packages. Both jobs must pass before
 publishing. Public API approvals and package compatibility protect the attributes
-contract against published 1.2.0. Generator coverage requires at least 95% lines
+contract against published 1.3.0. Generator coverage requires at least 95% lines
 and 80% branches; attribute coverage requires 100%. NuGet auditing checks transitive
 dependencies, and dedicated workflows run dependency review and CodeQL. Dependabot
 proposes weekly dependency and pinned Actions updates.

@@ -1,5 +1,14 @@
 # Changelog
 
+## 1.4.0 — 2026-10-30
+
+- Add a target-only `MapProperty(target, Use = nameof(Helper))` overload that
+  passes the whole source to a custom helper. Support creation, updates, nested
+  targets, and constructor/required-member initialization. Declare consumed source
+  root properties with `Sources` to satisfy strict source coverage without ignores.
+  Validate declarations and include them in model-shape approvals.
+- Expand regression coverage to 536 generator tests and 94 comparison tests.
+
 ## 1.3.0 — 2026-10-30
 
 - Select source converters explicitly with `MapProperty.Use`, including nullable
