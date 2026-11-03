@@ -550,9 +550,13 @@ private static Guid CreateOrderId() => Guid.NewGuid();
 
 Constants support C# attribute scalar values (strings, characters, booleans,
 integer and floating-point types, and enums), `typeof(...)`, and null for nullable
-targets. Non-null constants must have the same underlying type as the target;
-nullable lifting is allowed, but numeric widening, boxing, and implicit enum
-casts are not. Floating-point special values and signed zero are preserved.
+targets or legacy reference targets without nullable annotations. This includes
+models declared with nullable annotations disabled and models imported from legacy
+assemblies. Explicitly non-nullable targets still reject null, even when nullable
+annotations are disabled in the consuming project. Non-null constants must have
+the same underlying type as the target; nullable lifting is allowed, but numeric
+widening, boxing, and implicit enum casts are not. Floating-point special values
+and signed zero are preserved.
 One-dimensional attribute arrays are also supported, with the same array type as
 the target and compatible element nullability:
 
