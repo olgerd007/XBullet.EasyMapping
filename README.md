@@ -17,8 +17,8 @@ Version **1.3.0** adds explicit converters, constant and generated
 target values, and nested target paths for creation and updates.
 Version **1.4.0** adds whole-source helpers and explicit
 `Sources` declarations for strict source coverage.
-Version **1.4.1** is the next patch candidate and fixes null constants for legacy
-reference targets without nullable annotations.
+Version **1.4.1** fixes null constants for legacy reference targets without
+nullable annotations.
 See the [release guide](docs/release.md),
 [release notes](CHANGELOG.md), and [MIT license](LICENSE).
 

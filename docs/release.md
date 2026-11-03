@@ -1,8 +1,8 @@
 # Releases and versioning
 
-This document describes the **1.4.1** release candidate, prepared on 2026-11-03.
-The candidate fixes null constants for legacy reference targets without nullable
-annotations. Version 1.4.0 remains the latest published release.
+This document describes the release procedure for **1.4.1**, dated 2026-11-03.
+The release fixes null constants for legacy reference targets without nullable
+annotations.
 NuGet publication is complete only when the publishing workflow succeeds. The
 existing release tags and published package versions remain immutable. A `v<version>` tag and
 GitHub Release identify the tested source commit; NuGet publication completes after approval of

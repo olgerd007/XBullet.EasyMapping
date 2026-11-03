@@ -1,6 +1,6 @@
 # Changelog
 
-## 1.4.1 — Unreleased
+## 1.4.1 — 2026-11-03
 
 - Accept null constants for legacy reference targets without nullable annotations,
   including properties, nested constructor parameters, and array elements. Preserve
