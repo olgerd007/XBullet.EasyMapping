@@ -1,5 +1,14 @@
 # Changelog
 
+## 1.4.1 — 2026-11-03
+
+- Accept null constants for legacy reference targets without nullable annotations,
+  including properties, nested constructor parameters, and array elements. Preserve
+  rejection of null constants for explicitly non-nullable targets, independently
+  of the consuming project's nullable setting.
+- Expand regression coverage to 552 generator tests and 94 comparison tests,
+  including models imported from legacy assemblies.
+
 ## 1.4.0 — 2026-10-30
 
 - Add a target-only `MapProperty(target, Use = nameof(Helper))` overload that

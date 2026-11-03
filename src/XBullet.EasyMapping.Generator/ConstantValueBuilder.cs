@@ -16,13 +16,15 @@ internal static class ConstantValueBuilder
 
         if (constant.IsNull)
         {
-            if (!SymbolNames.IsNullable(target))
+            var legacyReference = target.IsReferenceType && target.NullableAnnotation == NullableAnnotation.None;
+            if (!SymbolNames.IsNullable(target) && !legacyReference)
             {
                 error = $"null requires a nullable target, but '{SymbolNames.Type(target)}' is non-nullable";
                 return false;
             }
 
-            expression = "default(" + SymbolNames.Type(target) + ")";
+            // Generated code enables nullable analysis even for legacy model types and array elements.
+            expression = "default(" + SymbolNames.Type(target) + ")" + (legacyReference ? "!" : "");
             error = "";
             return true;
         }
