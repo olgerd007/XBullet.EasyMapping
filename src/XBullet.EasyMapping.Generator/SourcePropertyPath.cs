@@ -82,10 +82,11 @@ internal sealed class SourcePropertyPath
                 other.ContainingType.AllInterfaces.Contains(property.ContainingType, SymbolEqualityComparer.Default)))).ToArray();
     }
 
-    public ITypeSymbol GetResultType(Compilation compilation)
+    public ITypeSymbol GetResultType(Compilation compilation, bool nullSafeMemberMapping = false)
     {
         var type = _properties[_properties.Length - 1].Type;
-        if (SymbolNames.IsNullable(type) || !_properties.Take(_properties.Length - 1).Any(property => SymbolNames.IsNullable(property.Type)))
+        if (SymbolNames.IsNullable(type) || !_properties.Take(_properties.Length - 1)
+            .Any(property => CanBeNullReceiver(property.Type, nullSafeMemberMapping)))
         {
             return type;
         }
@@ -95,15 +96,20 @@ internal sealed class SourcePropertyPath
             : type.WithNullableAnnotation(NullableAnnotation.Annotated);
     }
 
-    public string Access(string sourceName)
+    public string Access(string sourceName, bool nullSafeMemberMapping = false)
     {
         var expression = new StringBuilder(sourceName);
         for (var index = 0; index < _properties.Length; index++)
         {
-            var conditional = index > 0 && SymbolNames.IsNullable(_properties[index - 1].Type);
+            var conditional = index > 0 && CanBeNullReceiver(_properties[index - 1].Type, nullSafeMemberMapping);
             expression.Append(conditional ? "?." : ".").Append(SymbolNames.Identifier(_properties[index].Name));
         }
 
         return expression.ToString();
     }
+
+    // Legacy reference types have no nullability contract, so traversing them must
+    // guard against null and lift the path result just like an annotated receiver.
+    private static bool CanBeNullReceiver(ITypeSymbol type, bool nullSafeMemberMapping) => SymbolNames.IsNullable(type) ||
+        (type.IsReferenceType && (nullSafeMemberMapping || type.NullableAnnotation == NullableAnnotation.None));
 }

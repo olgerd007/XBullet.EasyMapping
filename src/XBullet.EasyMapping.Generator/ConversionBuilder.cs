@@ -12,16 +12,19 @@ internal sealed class ConversionBuilder
     private readonly HashSet<string> _explicitHelpers;
     private readonly Action<DiagnosticDescriptor, string[]> _report;
     private readonly HashSet<string> _names;
+    private readonly bool _allowReferenceAssignment;
     private int _counter;
 
     public ConversionBuilder(Compilation compilation, IMethodSymbol method, IMethodSymbol[] candidates, HashSet<string> explicitHelpers,
-        Action<DiagnosticDescriptor, string[]> report)
+        Action<DiagnosticDescriptor, string[]> report, bool allowReferenceAssignment = false, bool nullSafeMemberMapping = false)
     {
         _compilation = (CSharpCompilation)compilation;
         _method = method;
         _candidates = candidates;
         _explicitHelpers = explicitHelpers;
         _report = report;
+        _allowReferenceAssignment = allowReferenceAssignment;
+        NullSafeMemberMapping = nullSafeMemberMapping;
         _names = new HashSet<string>(method.Parameters.Select(parameter => parameter.Name), StringComparer.Ordinal);
         _names.UnionWith(method.ContainingType.GetMembers().Select(member => member.Name));
     }
@@ -29,6 +32,11 @@ internal sealed class ConversionBuilder
     public HashSet<IMethodSymbol> Dependencies { get; } = new(SymbolEqualityComparer.Default);
 
     public List<string> CollectionHelpers { get; } = [];
+
+    public bool NullSafeMemberMapping
+    {
+        get;
+    }
 
     public string NewName()
     {
@@ -42,6 +50,11 @@ internal sealed class ConversionBuilder
 
     public string Convert(ITypeSymbol source, ITypeSymbol target, string expression, string member, string? use = null)
     {
+        if (NullSafeMemberMapping && (source.IsReferenceType || SymbolNames.IsNullable(source)))
+        {
+            return ConvertNullSafe(source, target, expression, member, use);
+        }
+
         if (use is not null)
         {
             return ConvertUsingHelper(source, target, expression, member, use);
@@ -76,6 +89,64 @@ internal sealed class ConversionBuilder
         return SymbolNames.IsNullable(target) ? $"({SymbolNames.Type(target)})({nonNullResult})" : nonNullResult;
     }
 
+    private string ConvertNullSafe(ITypeSymbol source, ITypeSymbol target, string expression, string member, string? use)
+    {
+        var nullableSource = source.IsReferenceType ? source.WithNullableAnnotation(NullableAnnotation.Annotated) : source;
+        if (use is not null)
+        {
+            if (_candidates.Any(candidate => candidate.Name == use && HasConverterSignature(candidate) &&
+                SymbolNames.IsNullable(candidate.Parameters[0].Type) && CanPass(nullableSource, candidate.Parameters[0].Type) &&
+                CanPass(candidate.ReturnType, target)))
+            {
+                return ConvertUsingHelper(nullableSource, target, expression, member, use);
+            }
+        }
+        else
+        {
+            var nullAwareCandidates = FindCandidates(nullableSource, target, exact: true)
+                .Where(candidate => !candidate.IsPartialDefinition || candidate.PartialImplementationPart is not null ||
+                    SymbolNames.IsNullable(target)).ToArray();
+            if (nullAwareCandidates.Length == 0)
+            {
+                nullAwareCandidates = _candidates.Where(candidate => !_explicitHelpers.Contains(candidate.Name) &&
+                    HasConverterSignature(candidate) && SymbolNames.IsNullable(candidate.Parameters[0].Type) &&
+                    CanPass(nullableSource, candidate.Parameters[0].Type) && CanPass(candidate.ReturnType, target) &&
+                    (!candidate.IsPartialDefinition || candidate.PartialImplementationPart is not null ||
+                        SymbolNames.IsNullable(target))).ToArray();
+            }
+
+            if (nullAwareCandidates.Length > 0)
+            {
+                return Call(nullAwareCandidates, nullableSource, target, expression);
+            }
+        }
+
+        if (IsQueryable(source) || IsQueryable(target))
+        {
+            return Fail(source, target, member, "IQueryable projections are not supported");
+        }
+
+        var local = NewName();
+        var converted = use is null
+            ? ConvertNonNull(SymbolNames.NonNullable(source), SymbolNames.NonNullable(target), local, member)
+            : ConvertUsingHelper(SymbolNames.NonNullable(source), target, local, member, use);
+        return $"({expression} is {{ }} {local} ? {converted} : {NullMemberValue(target)})";
+    }
+
+    private static string NullMemberValue(ITypeSymbol target)
+    {
+        if (TryTargetCollection(target, out var element, out var array))
+        {
+            return array
+                ? $"global::System.Array.Empty<{SymbolNames.Type(element)}>()"
+                : $"new global::System.Collections.Generic.List<{SymbolNames.Type(element)}>()";
+        }
+
+        // Opting in permits null reference assignments even for non-nullable member
+        // declarations. Suppress the generated warning without changing their types.
+        return $"default({SymbolNames.Type(target)})" + (target.IsReferenceType && !SymbolNames.IsNullable(target) ? "!" : "");
+    }
+
     private string ConvertNonNull(ITypeSymbol source, ITypeSymbol target, string expression, string member)
     {
         var candidates = FindCandidates(source, target, exact: false).ToArray();
@@ -103,7 +174,10 @@ internal sealed class ConversionBuilder
         }
 
         if (SymbolEqualityComparer.Default.Equals(source, target) &&
-            (source.IsValueType || source.SpecialType == SpecialType.System_String))
+            (source.IsValueType || source.SpecialType == SpecialType.System_String ||
+                (_allowReferenceAssignment && source.IsReferenceType &&
+                    SymbolEqualityComparer.IncludeNullability.Equals(
+                        SymbolNames.NonNullable(source), SymbolNames.NonNullable(target)))))
         {
             return expression;
         }

@@ -143,6 +143,11 @@ internal sealed class MappingPlanner
         return false;
     }
 
+    private bool ReadMapperFlag(string name) => _mapper.GetAttributes()
+        .Where(attribute => attribute.AttributeClass?.ToDisplayString() == "XBullet.EasyMapping.MapperAttribute")
+        .SelectMany(attribute => attribute.NamedArguments)
+        .Any(argument => argument.Key == name && argument.Value.Value is true);
+
     private string? BuildMethod(IMethodSymbol method, IMethodSymbol[] methods, bool requireSourceCoverage, HashSet<string> explicitHelpers)
     {
         if (method.TypeParameters.Length != 0 || method.IsAbstract || method.IsVirtual || method.IsOverride ||
@@ -206,7 +211,8 @@ internal sealed class MappingPlanner
         var sourceCoverage = new SourceCoverageValidator(sourceProperties.Select(property => property.Name).ToArray(),
             method, requireSourceCoverage, (descriptor, arguments) => Report(descriptor, method, arguments));
         var conversion = new ConversionBuilder(_compilation, method, methods, explicitHelpers,
-            (descriptor, arguments) => Report(descriptor, method, arguments));
+            (descriptor, arguments) => Report(descriptor, method, arguments),
+            ReadMapperFlag("AllowReferenceAssignment"), ReadMapperFlag("NullSafeMemberMapping"));
         _dependencies.Add(method, conversion.Dependencies);
         var sourceName = SymbolNames.Identifier(method.Parameters[0].Name);
         var body = new StringBuilder();

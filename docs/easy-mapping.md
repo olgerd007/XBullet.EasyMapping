@@ -80,14 +80,17 @@ the attributes assembly in that case.
 - A null root returns null when both source and result are nullable. A non-nullable
   result requires a source value; a null argument throws `ArgumentNullException`.
 - Nullable properties map to nullable targets. Nullable-to-non-nullable member
-  mappings require a handwritten converter that explicitly handles null.
+  mappings require a handwritten converter that explicitly handles null, unless
+  `NullSafeMemberMapping = true` is enabled (see below).
 - Null collections stay null. Supported collections always get a new container.
+  With `NullSafeMemberMapping = true`, null collections become empty instead.
   Collection interfaces are materialized eagerly as lists, not lazy sequences.
 - Strings and identical value types copy by assignment. Implicit numeric widening
   is supported. Other conversions require a declared mapping or handwritten method.
   Struct assignment is a value copy, not a promise to clone references inside structs.
 - Mutable reference properties require an explicit nested mapping or converter,
-  including when source and destination reference types are the same.
+  including when source and destination reference types are the same, unless the
+  mapper opts into `AllowReferenceAssignment = true` (see below).
 
 Supported collection targets are one-dimensional arrays, `List<T>`, `IList<T>`,
 `ICollection<T>`, `IReadOnlyList<T>`, `IReadOnlyCollection<T>`, and `IEnumerable<T>`.
@@ -373,10 +376,52 @@ members still need matching source properties, explicit mappings, or ignores.
 Conversions apply to the selected leaf property. The same enum type copies
 directly; different enum types and enum-to-number conversions require an explicit
 converter. Nullable intermediate references and structs propagate null through
-the path, making its result nullable even when the leaf is non-nullable. A
-non-nullable target therefore requires a handwritten converter for the nullable
+the path, making its result nullable even when the leaf is non-nullable. Legacy
+reference intermediates without nullable annotations are also checked for null,
+including types from referenced assemblies compiled with nullable annotations
+disabled. Explicitly non-nullable references still follow their declared contract.
+By default, a non-nullable target requires a handwritten converter for the nullable
 leaf type. Getters are evaluated once per path access; separate target mappings
 evaluate their paths independently.
+
+This protection applies to generated nested source paths such as `Child.Value`.
+It does not rewrite handwritten helper bodies, change root-source null handling,
+or silently skip assignments to non-nullable targets. Legacy paths that previously
+compiled through direct access may now report EMAP005 until the target is made
+nullable or an explicit null-handling converter is supplied.
+
+### Optional null-safe member mapping
+
+Enable automatic member null handling on a mapper:
+
+```csharp
+[Mapper(NullSafeMemberMapping = true)]
+public static partial class SampleMapper
+{
+    [MapProperty("Child.Value", nameof(Output.Value))]
+    public static partial Output Map(Input source);
+}
+```
+
+The option defaults to `false`. When enabled, generated nested source paths guard
+all reference intermediates, including explicitly non-nullable declarations.
+Missing non-nullable value members receive `default(T)`; for example, a missing
+`Child.Value` mapped to an `int` receives `0`. Nullable value targets retain null.
+Reference members receive null even if their target declarations are non-nullable;
+opting in therefore permits runtime nulls that the target annotations prohibit.
+Supported null collections become empty collections, including nullable collection
+targets. Existing-target updates assign these fallback values instead of preserving
+previous values. Present collections still get new containers with converted elements.
+
+Null-aware converters accepting nullable input keep precedence and can supply
+their own fallback values. Other converters are called only for present member
+values. These rules apply to generated member conversions, constructor arguments,
+`init` members, and collection elements. Handwritten helper bodies are not rewritten.
+Root-source null handling is unchanged: nullable source and nullable return types
+allow a null result; other signatures require a root value. Different types still
+need a supported conversion, and same-type reference assignments still require
+`AllowReferenceAssignment = true` or a converter. This option controls member
+null handling rather than enabling all behaviors of another mapping library.
 
 Under `MappingCoverage.Both`, a nested source path accounts for its root property
 (for example, `Customer`), without requiring coverage of every member inside it.
@@ -419,6 +464,27 @@ Declare each nested pair in the same mapper:
 ```csharp
 private static partial AddressDto ToAddress(AddressInput source);
 ```
+
+To share existing instances automatically for identical reference member types,
+opt in on the mapper:
+
+```csharp
+[Mapper(AllowReferenceAssignment = true)]
+public static partial class ContainerMapper
+{
+    public static partial ContainerOutput Map(ContainerInput source);
+}
+```
+
+For example, if both models declare `Settings Options`, the
+generated assignment shares the existing `Settings` instance. Mutating
+that instance through either model affects the other. This does not clone the
+object or recursively map its members. The option defaults to `false` to preserve
+existing strict conversion behavior. Declared mappings and converters (including
+`MapProperty.Use`) still take precedence. Nullable-to-non-nullable conversions
+still require explicit null handling, and different reference types still need a
+mapping. Supported collection containers are always copied; with this option,
+same-type reference elements can share instances. `IQueryable` remains unsupported.
 
 Handwritten methods can provide additional conversions, including nullable input
 handling or formatting. They must have one input and a return value with compatible

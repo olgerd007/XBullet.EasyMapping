@@ -14,12 +14,18 @@ public sealed class AttributeContractTests
 
         Assert.Equal(MappingCoverage.Target, attribute.Coverage);
         Assert.False(attribute.RequireModelApproval);
+        Assert.False(attribute.AllowReferenceAssignment);
+        Assert.False(attribute.NullSafeMemberMapping);
 
         attribute.Coverage = MappingCoverage.Both;
         attribute.RequireModelApproval = true;
+        attribute.AllowReferenceAssignment = true;
+        attribute.NullSafeMemberMapping = true;
 
         Assert.Equal(MappingCoverage.Both, attribute.Coverage);
         Assert.True(attribute.RequireModelApproval);
+        Assert.True(attribute.AllowReferenceAssignment);
+        Assert.True(attribute.NullSafeMemberMapping);
     }
 
     [Fact]
