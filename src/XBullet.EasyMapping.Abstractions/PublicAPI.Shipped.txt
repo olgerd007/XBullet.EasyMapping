@@ -24,9 +24,13 @@ XBullet.EasyMapping.MapPropertyAttribute.Target.get -> string!
 XBullet.EasyMapping.MapPropertyAttribute.Use.get -> string?
 XBullet.EasyMapping.MapPropertyAttribute.Use.set -> void
 XBullet.EasyMapping.MapperAttribute
+XBullet.EasyMapping.MapperAttribute.AllowReferenceAssignment.get -> bool
+XBullet.EasyMapping.MapperAttribute.AllowReferenceAssignment.set -> void
 XBullet.EasyMapping.MapperAttribute.Coverage.get -> XBullet.EasyMapping.MappingCoverage
 XBullet.EasyMapping.MapperAttribute.Coverage.set -> void
 XBullet.EasyMapping.MapperAttribute.MapperAttribute() -> void
+XBullet.EasyMapping.MapperAttribute.NullSafeMemberMapping.get -> bool
+XBullet.EasyMapping.MapperAttribute.NullSafeMemberMapping.set -> void
 XBullet.EasyMapping.MapperAttribute.RequireModelApproval.get -> bool
 XBullet.EasyMapping.MapperAttribute.RequireModelApproval.set -> void
 XBullet.EasyMapping.MappingCoverage

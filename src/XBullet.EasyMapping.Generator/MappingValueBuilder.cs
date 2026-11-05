@@ -45,7 +45,8 @@ internal sealed class MappingValueBuilder
         if (mapping.Source is { } source)
         {
             _coverage.RecordMapped(source.RootName);
-            return _conversion.Convert(source.GetResultType(_compilation), target, source.Access(_sourceName), member, mapping.Use);
+            return _conversion.Convert(source.GetResultType(_compilation, _conversion.NullSafeMemberMapping), target,
+                source.Access(_sourceName, _conversion.NullSafeMemberMapping), member, mapping.Use);
         }
 
         if (mapping.Constant is { } constant)
