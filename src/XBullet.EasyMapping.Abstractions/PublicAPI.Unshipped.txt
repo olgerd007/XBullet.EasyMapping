@@ -1,5 +1,1 @@
 #nullable enable
-XBullet.EasyMapping.MapperAttribute.AllowReferenceAssignment.get -> bool
-XBullet.EasyMapping.MapperAttribute.AllowReferenceAssignment.set -> void
-XBullet.EasyMapping.MapperAttribute.NullSafeMemberMapping.get -> bool
-XBullet.EasyMapping.MapperAttribute.NullSafeMemberMapping.set -> void

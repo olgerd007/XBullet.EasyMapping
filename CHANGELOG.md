@@ -1,5 +1,23 @@
 # Changelog
 
+## 1.5.0 — Unreleased
+
+- Add opt-in `AllowReferenceAssignment` to share identical reference member
+  instances when no mapping or converter is declared. Preserve converter
+  precedence, nullability checks, and independent supported collection containers.
+- Add opt-in `NullSafeMemberMapping` to guard nested reference access and use
+  default member values or empty collections for missing sources. Support
+  creation, updates, constructor/init members, and collection elements while
+  preserving null-aware converters. Root-source handling remains unchanged.
+- Guard legacy reference intermediates without nullable annotations, including
+  models imported from referenced assemblies. Their nested path results now
+  propagate null. **Migration:** existing paths to non-nullable targets may report
+  EMAP005; use a nullable target, supply an explicit fallback converter, or enable
+  `NullSafeMemberMapping`. Explicitly non-nullable intermediates retain their
+  declared behavior unless the option is enabled.
+- Expand regression coverage to 616 generator tests and 94 comparison tests.
+  Verify both new options through the packed consumer using neutral fixtures.
+
 ## 1.4.1 — 2026-11-03
 
 - Accept null constants for legacy reference targets without nullable annotations,

@@ -12,6 +12,18 @@ if (wholeSourceResult.Id != 42 || wholeSourceResult.DisplayName != "42:Ada" || w
     throw new InvalidOperationException("The packed mapper did not apply the whole-source helper with strict source coverage.");
 }
 
+var missingOptions = OptionSmokeMappings.Map(new OptionSmokeInput(null, null, null));
+var child = new OptionSmokeChild(7);
+var values = new List<int> { 3 };
+var presentOptions = OptionSmokeMappings.Map(new OptionSmokeInput(child, 5, values));
+if (missingOptions.Child is not null || missingOptions.Count != 0 || missingOptions.NestedValue != 0 ||
+    missingOptions.Values.Count != 0 || !ReferenceEquals(child, presentOptions.Child) ||
+    presentOptions.Count != 5 || presentOptions.NestedValue != 7 || presentOptions.Values.Count != 1 ||
+    ReferenceEquals(values, presentOptions.Values))
+{
+    throw new InvalidOperationException("The packed mapper did not apply reference assignment and null-safe member options.");
+}
+
 if (typeof(SmokeMappings).Assembly.GetReferencedAssemblies().Any(reference =>
     reference.Name!.StartsWith("Microsoft.CodeAnalysis", StringComparison.Ordinal) ||
     reference.Name == "XBullet.EasyMapping.Generator"))

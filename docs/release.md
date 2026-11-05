@@ -1,8 +1,8 @@
 # Releases and versioning
 
-This document describes the release procedure for **1.4.1**, dated 2026-11-03.
-The release fixes null constants for legacy reference targets without nullable
-annotations.
+This document describes the **1.5.0 release candidate**, prepared 2026-11-05.
+The candidate adds opt-in reference assignment and null-safe member mapping, plus
+null propagation through legacy nested source references. It has not been published.
 NuGet publication is complete only when the publishing workflow succeeds. The
 existing release tags and published package versions remain immutable. A `v<version>` tag and
 GitHub Release identify the tested source commit; NuGet publication completes after approval of
@@ -12,8 +12,8 @@ the `nuget` deployment.
 
 | Package | Version | Purpose |
 | --- | --- | --- |
-| XBullet.EasyMapping | 1.4.1 | Compiler generator, legacy null constants, whole-source helpers, explicit value mappings, nested source/target paths, model approvals, and MSBuild integration |
-| XBullet.EasyMapping.Abstractions | 1.4.1 | Mapping declaration attributes, whole-source helper bindings and consumed-source declarations, explicit values, and coverage options |
+| XBullet.EasyMapping | 1.5.0 | Compiler generator, reference assignment, null-safe member mapping, legacy nested null propagation, explicit helpers/values, model approvals, and MSBuild integration |
+| XBullet.EasyMapping.Abstractions | 1.5.0 | Mapping declaration attributes, reference assignment and null-safe member options, helper bindings, explicit values, and coverage options |
 
 Both packages target .NET Standard 2.0 and use the [MIT license](../LICENSE).
 The generator is built against Roslyn 4.8; compiler scenarios use C# 12. Samples,
@@ -55,7 +55,7 @@ The attributes project uses `PublicAPI.Shipped.txt` for the published API and
 `PublicAPI.Unshipped.txt` for intentional additions. Review API changes explicitly;
 move approved additions to the shipped file when releasing them. The public API
 analyzer is private build tooling and is not a consumer dependency. The NuGet package
-validator compares the attributes package with published **1.4.0** for binary
+validator compares the attributes package with published **1.4.1** for binary
 compatibility. Update the baseline to the latest stable version after publication.
 It does not validate the analyzer-only generator's behavior: compiler, diagnostic,
 generated-code, incremental, model-approval, and packed-consumer tests cover that.
@@ -67,10 +67,10 @@ measurements were 96.99% lines / 85.26% branches and 100% respectively. Generate
 consumer mappings and comparison libraries are outside these production-package
 coverage totals. Coverage is a regression gate alongside semantic tests.
 
-Local Windows validation for the 1.4.1 candidate passed all 552 generator tests
-and 94 comparison tests. Release coverage measured 99.71% lines / 97.25% branches
-for the generator and 100% lines / branches for the attributes. The final release
-commit must also pass GitHub Actions validation on Windows and Ubuntu.
+Local Windows Release validation for the 1.5.0 candidate passed 616 generator tests
+and 94 comparison tests. Generator coverage measured 99.72% lines / 96.87% branches;
+attributes coverage remained 100% lines / branches. The final release commit must
+also pass GitHub Actions validation on Windows and Ubuntu.
 
 ## Local validation
 
@@ -104,7 +104,7 @@ Each command must succeed. The two intentionally invalid fixture builds are chec
 by `Test-GeneratorDiagnostics.ps1`, which accepts only their expected error IDs and
 messages. Review changed snapshots; validation never approves model changes.
 
-Packages are written to `artifacts/packages/1.4.1/`. The pack script verifies their
+Packages are written to `artifacts/packages/1.5.0/`. The pack script verifies their
 contents before restoring and executing a fresh consumer, then tests the received/
 approved workflow. It never publishes anything.
 
@@ -134,7 +134,7 @@ Before publishing:
 4. Confirm ownership of both NuGet package IDs and configure a publishing identity
    with permission to publish them. Never store API keys in source control.
 5. Change the changelog's `Unreleased` label to the actual release date, commit it,
-   and rerun CI before creating the `v1.4.1` tag on the final release commit.
+   and rerun CI before creating the `v1.5.0` tag on the final release commit.
 6. Publish the GitHub Release for the tag, then review and approve the `nuget`
    deployment. The publishing workflow uploads the attributes package first,
    then the generator, and attaches the same verified packages to the release.
@@ -191,7 +191,7 @@ initial 1.1.0 release, whose first run pushed both packages before timing out.
 For a local dry run, download the validated CI packages and run:
 
 ```powershell
-./tools/Publish-Packages.ps1 -PackageDirectory <downloaded-package-directory> -Version 1.4.1 -Commit <full-tagged-commit-sha> -WhatIf
+./tools/Publish-Packages.ps1 -PackageDirectory <downloaded-package-directory> -Version 1.5.0 -Commit <full-tagged-commit-sha> -WhatIf
 ```
 
 The dry run validates the packages and reports the two planned pushes. It requests

@@ -19,6 +19,8 @@ Version **1.4.0** adds whole-source helpers and explicit
 `Sources` declarations for strict source coverage.
 Version **1.4.1** fixes null constants for legacy reference targets without
 nullable annotations.
+The **1.5.0** candidate adds opt-in reference assignment and null-safe member
+mapping, plus null propagation through legacy nested source references.
 See the [release guide](docs/release.md),
 [release notes](CHANGELOG.md), and [MIT license](LICENSE).
 
@@ -54,6 +56,14 @@ must each be accounted for. The default remains `MappingCoverage.Target` for exi
 `RequireModelApproval` additionally blocks structural model changes until the
 readable approval files are explicitly updated. See the [approval workflow](docs/easy-mapping.md#model-shape-approval)
 for automatic baseline discovery and the received-file workflow. Approval is opt-in.
+
+`AllowReferenceAssignment = true` permits identical reference member types to
+share instances. `NullSafeMemberMapping = true` guards nested references and maps
+missing members to defaults or empty collections. Both options default to `false`;
+root-source handling remains unchanged. Legacy reference intermediates without
+nullable annotations now propagate null, so existing paths to non-nullable targets
+may require a fallback converter or the null-safe option. See
+[null-safe member mapping](docs/easy-mapping.md#optional-null-safe-member-mapping).
 
 ## Run
 
@@ -153,17 +163,17 @@ dependencies are centralized and solution project resolutions are recorded in lo
 files. Sample projects are non-packable.
 
 Run `./tools/Test-Package.ps1` to build both NuGet packages into
-`artifacts/packages/1.4.1`, verify their metadata/license/assets, and execute an
+`artifacts/packages/1.5.0`, verify their metadata/license/assets, and execute an
 isolated consumer using that local feed. The version comes from
 `Directory.Build.props`; the smoke consumer uses the same version through central
 package management. Each run uses a fresh cache.
 
-CI is configured to verify Release builds, all 646 tests, formatting, documentation links,
+CI is configured to verify Release builds, all 710 tests, formatting, documentation links,
 diagnostics, model approvals, generated evidence, and packaged consumption on
 Windows and Ubuntu. Test results are retained even on failure; a successful
 Windows job also retains the verified packages. Both jobs must pass before
 publishing. Public API approvals and package compatibility protect the attributes
-contract against published 1.4.0. Generator coverage requires at least 95% lines
+contract against published 1.4.1. Generator coverage requires at least 95% lines
 and 80% branches; attribute coverage requires 100%. NuGet auditing checks transitive
 dependencies, and dedicated workflows run dependency review and CodeQL. Dependabot
 proposes weekly dependency and pinned Actions updates.
