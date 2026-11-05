@@ -32,8 +32,8 @@
       },
       "Facet.Attributes": {
         "type": "Transitive",
-        "resolved": "6.6.15",
-        "contentHash": "Q7n16O1ylE/U09uDMNgXjyClhMFBq8tj3bJwLdnSTf0gra9hoO+s/iXv5gVy7UFpm8/O4gd5vBS2s1/Q36164g=="
+        "resolved": "6.7.0",
+        "contentHash": "L+yrLYXEsRVBTD9ycrSWZpUZ/DsMLTV6uoTNDgUEK/aK7nyF3Qg9S5kded6fo96u5Wtvzd3N6Ko08DaH8mjf4w=="
       },
       "Gee.External.Capstone": {
         "type": "Transitive",
@@ -199,7 +199,7 @@
         "type": "Project",
         "dependencies": {
           "AutoMapper": "[16.2.0, )",
-          "MappingComparison.Contracts": "[1.1.1, )"
+          "MappingComparison.Contracts": "[1.5.0, )"
         }
       },
       "mappingcomparison.contracts": {
@@ -208,27 +208,27 @@
       "mappingcomparison.easymapping": {
         "type": "Project",
         "dependencies": {
-          "MappingComparison.Contracts": "[1.1.1, )",
-          "XBullet.EasyMapping.Abstractions": "[1.1.1, )"
+          "MappingComparison.Contracts": "[1.5.0, )",
+          "XBullet.EasyMapping.Abstractions": "[1.5.0, )"
         }
       },
       "mappingcomparison.facet": {
         "type": "Project",
         "dependencies": {
-          "Facet": "[6.6.15, )",
-          "MappingComparison.Contracts": "[1.1.1, )"
+          "Facet": "[6.7.0, )",
+          "MappingComparison.Contracts": "[1.5.0, )"
         }
       },
       "mappingcomparison.manual": {
         "type": "Project",
         "dependencies": {
-          "MappingComparison.Contracts": "[1.1.1, )"
+          "MappingComparison.Contracts": "[1.5.0, )"
         }
       },
       "mappingcomparison.mapperly": {
         "type": "Project",
         "dependencies": {
-          "MappingComparison.Contracts": "[1.1.1, )"
+          "MappingComparison.Contracts": "[1.5.0, )"
         }
       },
       "xbullet.easymapping.abstractions": {
@@ -247,11 +247,11 @@
       },
       "Facet": {
         "type": "CentralTransitive",
-        "requested": "[6.6.15, )",
-        "resolved": "6.6.15",
-        "contentHash": "4AbipW5TJtvlyV1CjCup/UQYNxbD/DGpQ6Ew62z7q2KjJIZyHVxZuyNpLgaVEwfeUXyOwHIX8Z9kA1tp2xg+AA==",
+        "requested": "[6.7.0, )",
+        "resolved": "6.7.0",
+        "contentHash": "dvvFRPNKEJMvqaSDqM/yE3TQSH8BrNexXCpOcn5z8iZ1QEcFPO/w7sb5qiZZlW7uadpydV1MEBWid9XvsTiKtA==",
         "dependencies": {
-          "Facet.Attributes": "6.6.15"
+          "Facet.Attributes": "6.7.0"
         }
       },
       "Microsoft.CodeAnalysis.CSharp": {
