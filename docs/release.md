@@ -1,8 +1,8 @@
 # Releases and versioning
 
-This document describes the **1.5.0 release candidate**, prepared 2026-11-05.
-The candidate adds opt-in reference assignment and null-safe member mapping, plus
-null propagation through legacy nested source references. It has not been published.
+This document describes the release procedure for **1.5.0**, dated 2026-11-05.
+The release adds opt-in reference assignment and null-safe member mapping, plus
+null propagation through legacy nested source references.
 NuGet publication is complete only when the publishing workflow succeeds. The
 existing release tags and published package versions remain immutable. A `v<version>` tag and
 GitHub Release identify the tested source commit; NuGet publication completes after approval of

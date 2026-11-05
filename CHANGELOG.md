@@ -1,6 +1,6 @@
 # Changelog
 
-## 1.5.0 — Unreleased
+## 1.5.0 — 2026-11-05
 
 - Add opt-in `AllowReferenceAssignment` to share identical reference member
   instances when no mapping or converter is declared. Preserve converter

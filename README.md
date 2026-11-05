@@ -19,7 +19,7 @@ Version **1.4.0** adds whole-source helpers and explicit
 `Sources` declarations for strict source coverage.
 Version **1.4.1** fixes null constants for legacy reference targets without
 nullable annotations.
-The **1.5.0** candidate adds opt-in reference assignment and null-safe member
+Version **1.5.0** adds opt-in reference assignment and null-safe member
 mapping, plus null propagation through legacy nested source references.
 See the [release guide](docs/release.md),
 [release notes](CHANGELOG.md), and [MIT license](LICENSE).
