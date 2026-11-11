@@ -3,7 +3,7 @@
     <ManagePackageVersionsCentrally>true</ManagePackageVersionsCentrally>
   </PropertyGroup>
   <ItemGroup>
-    <PackageVersion Include="AutoMapper" Version="16.2.0" />
+    <PackageVersion Include="AutoMapper" Version="16.3.0" />
     <PackageVersion Include="Riok.Mapperly" Version="4.3.1" />
     <PackageVersion Include="Facet" Version="6.6.15" />
     <PackageVersion Include="BenchmarkDotNet" Version="0.15.8" />
